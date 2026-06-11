@@ -288,15 +288,14 @@ func GetPlan() ([]PurchasePlan, error) {
 	if err != nil {
 		return nil, fmt.Errorf("query plan: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var plan []PurchasePlan
 	for rows.Next() {
 		var p PurchasePlan
 		if err := rows.Scan(
-			&p.ID, &p.ItemID, &p.ScheduledDate, &p.PaydayID, &p.BudgetCycle,
-			&p.Rank, &p.AmountAllocated, &p.Status, &p.CreatedAt, &p.Notes,
-			&p.ItemTitle, &p.ItemPrice, &p.ItemURL,
+			&p.ID, &p.ItemID, &p.ScheduledDate, &p.BudgetCycle, &p.Rank,
+			&p.AmountAllocated, &p.Status,
 		); err != nil {
 			return nil, fmt.Errorf("scan plan: %w", err)
 		}
@@ -365,7 +364,7 @@ func GetNotificationsForItem(itemID int64, ntype string, date string) ([]Notific
 	if err != nil {
 		return nil, fmt.Errorf("query notifications: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var entries []NotificationLog
 	for rows.Next() {
@@ -411,7 +410,7 @@ func GetPriceHistory(itemID int64, limit int) ([]PriceHistory, error) {
 	if err != nil {
 		return nil, fmt.Errorf("query price history: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var entries []PriceHistory
 	for rows.Next() {
@@ -440,7 +439,7 @@ func GetItemCountByStatus() (map[string]int, error) {
 	if err != nil {
 		return nil, fmt.Errorf("query item counts: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	counts := make(map[string]int)
 	for rows.Next() {
@@ -481,7 +480,7 @@ func GetPlanItemsReady() ([]PurchasePlan, error) {
 	if err != nil {
 		return nil, fmt.Errorf("query ready plan items: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var plan []PurchasePlan
 	for rows.Next() {
