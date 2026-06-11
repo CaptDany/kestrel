@@ -339,3 +339,73 @@ func DeleteItemSavings(itemID int64) error {
 	_, err := DB.Exec("DELETE FROM item_savings WHERE item_id = ?", itemID)
 	return err
 }
+
+// ─── Notification Log ────────────────────────────────────────────────────────
+
+func LogNotification(entry *NotificationLog) (int64, error) {
+	res, err := DB.Exec(
+		`INSERT INTO notification_log (item_id, type, channel, subject, body, delivered)
+		 VALUES (?, ?, ?, ?, ?, ?)`,
+		entry.ItemID, entry.Type, entry.Channel, entry.Subject, entry.Body, entry.Delivered,
+	)
+	if err != nil {
+		return 0, fmt.Errorf("log notification: %w", err)
+	}
+	return res.LastInsertId()
+}
+
+func GetNotificationsForItem(itemID int64, ntype string, date string) ([]NotificationLog, error) {
+	rows, err := DB.Query(
+		`SELECT id, item_id, type, channel, subject, body, sent_at, delivered
+		 FROM notification_log
+		 WHERE item_id = ? AND type = ? AND date(sent_at) = date(?)
+		 ORDER BY sent_at DESC`,
+		itemID, ntype, date,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("query notifications: %w", err)
+	}
+	defer rows.Close()
+
+	var entries []NotificationLog
+	for rows.Next() {
+		var e NotificationLog
+		if err := rows.Scan(&e.ID, &e.ItemID, &e.Type, &e.Channel, &e.Subject, &e.Body, &e.SentAt, &e.Delivered); err != nil {
+			return nil, fmt.Errorf("scan notification: %w", err)
+		}
+		entries = append(entries, e)
+	}
+	return entries, nil
+}
+
+// GetPlanItemsReady returns plan entries where scheduled_date <= today and status = 'planned'.
+// Used by the notification engine to find items ready to be purchased.
+func GetPlanItemsReady() ([]PurchasePlan, error) {
+	rows, err := DB.Query(
+		`SELECT pp.id, pp.item_id, pp.scheduled_date, pp.payday_id, pp.budget_cycle,
+		        pp.rank, pp.amount_allocated, pp.status, pp.created_at, pp.notes,
+		        i.title, i.price, i.url
+		 FROM purchase_plan pp
+		 JOIN items i ON i.id = pp.item_id
+		 WHERE pp.status = 'planned' AND pp.scheduled_date <= date('now')
+		 ORDER BY pp.scheduled_date ASC`,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("query ready plan items: %w", err)
+	}
+	defer rows.Close()
+
+	var plan []PurchasePlan
+	for rows.Next() {
+		var p PurchasePlan
+		if err := rows.Scan(
+			&p.ID, &p.ItemID, &p.ScheduledDate, &p.PaydayID, &p.BudgetCycle,
+			&p.Rank, &p.AmountAllocated, &p.Status, &p.CreatedAt, &p.Notes,
+			&p.ItemTitle, &p.ItemPrice, &p.ItemURL,
+		); err != nil {
+			return nil, fmt.Errorf("scan ready plan: %w", err)
+		}
+		plan = append(plan, p)
+	}
+	return plan, nil
+}
