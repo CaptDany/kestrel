@@ -173,7 +173,7 @@ func (t *Tracker) checkItem(item db.Item) {
 	body += fmt.Sprintf("Previous low: $%.2f\n", *low)
 	body += fmt.Sprintf("New price: $%.2f\n", *result.Price)
 	body += fmt.Sprintf("Drop: $%.2f (%.1f%%)\n", dropAmount, dropPct)
-	body += fmt.Sprintf("\n---\nSent by kestrel Purchase Planner")
+	body += "\n---\nSent by kestrel Purchase Planner"
 
 	dropPctRounded := math.Round(dropPct*10) / 10
 

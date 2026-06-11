@@ -182,7 +182,7 @@ func GetAllSettings() (map[string]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("query settings: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	settings := make(map[string]string)
 	for rows.Next() {
@@ -207,7 +207,7 @@ func GetBudgetEntries() ([]BudgetEntry, error) {
 	if err != nil {
 		return nil, fmt.Errorf("query budget entries: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var entries []BudgetEntry
 	for rows.Next() {
@@ -244,7 +244,7 @@ func GetBudgetEntriesForDate(date string) ([]BudgetEntry, error) {
 	if err != nil {
 		return nil, fmt.Errorf("query budget entries for date: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var entries []BudgetEntry
 	for rows.Next() {
