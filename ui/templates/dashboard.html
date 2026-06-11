@@ -1,25 +1,31 @@
 {{template "header" .}}
 {{$data := .Data}}
 <div class="columns is-multiline">
-    <div class="column is-3">
+    <div class="column is-one-fifth">
         <div class="box has-text-centered">
             <p class="heading">Pending</p>
             <p class="title">{{$data.pendingCount}}</p>
         </div>
     </div>
-    <div class="column is-3">
+    <div class="column is-one-fifth">
         <div class="box has-text-centered">
             <p class="heading">Saving</p>
             <p class="title">{{$data.savingCount}}</p>
         </div>
     </div>
-    <div class="column is-3">
+    <div class="column is-one-fifth">
         <div class="box has-text-centered">
             <p class="heading">Purchased</p>
             <p class="title">{{$data.purchasedCount}}</p>
         </div>
     </div>
-    <div class="column is-3">
+    <div class="column is-one-fifth">
+        <div class="box has-text-centered">
+            <p class="heading">Price Drops Today</p>
+            <p class="title">{{$data.priceDropCount}}</p>
+        </div>
+    </div>
+    <div class="column is-one-fifth">
         <div class="box has-text-centered">
             <p class="heading">Next Purchase</p>
             <p class="title is-5">{{if $data.nextPurchase}}{{$data.nextPurchase}}{{else}}—{{end}}</p>

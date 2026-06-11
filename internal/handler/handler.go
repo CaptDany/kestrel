@@ -13,11 +13,13 @@ import (
 	"github.com/CaptDany/kestrel/internal/engine"
 	"github.com/CaptDany/kestrel/internal/extractor"
 	"github.com/CaptDany/kestrel/internal/notifier"
+	"github.com/CaptDany/kestrel/internal/tracker"
 )
 
 type Handler struct {
-	tpl    *template.Template
-	notify *notifier.Engine
+	tpl     *template.Template
+	notify  *notifier.Engine
+	tracker *tracker.Tracker
 }
 
 func NewHandler(tpl *template.Template) *Handler {
@@ -26,6 +28,10 @@ func NewHandler(tpl *template.Template) *Handler {
 
 func (h *Handler) SetNotifierEngine(e *notifier.Engine) {
 	h.notify = e
+}
+
+func (h *Handler) SetTracker(t *tracker.Tracker) {
+	h.tracker = t
 }
 
 type pageData struct {
@@ -97,12 +103,15 @@ func (h *Handler) Dashboard(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	priceDropCount, _ := db.GetPriceDropCountToday()
+
 	h.render(w, "dashboard.html", pageData{
 		Title: "Dashboard",
 		Data: map[string]interface{}{
-			"pendingCount":  pendingCount,
+			"pendingCount":   pendingCount,
 			"purchasedCount": purchasedCount,
 			"savingCount":    savingCount,
+			"priceDropCount": priceDropCount,
 			"nextPurchase":   nextPurchase,
 			"totalPlanned":   totalPlanned,
 			"plan":           plan,
@@ -308,6 +317,9 @@ func (h *Handler) UpdateSettings(w http.ResponseWriter, r *http.Request) {
 	}
 	if h.notify != nil {
 		h.notify.RefreshConfig()
+	}
+	if h.tracker != nil {
+		h.tracker.RefreshConfig()
 	}
 	jsonResp(w, 200, map[string]string{"status": "saved"})
 }

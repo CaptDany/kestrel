@@ -106,6 +106,14 @@ func migrate() error {
 		sent_at TEXT NOT NULL DEFAULT (datetime('now')),
 		delivered INTEGER NOT NULL DEFAULT 0
 	);
+
+	CREATE TABLE IF NOT EXISTS price_history (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		item_id INTEGER NOT NULL REFERENCES items(id),
+		price REAL,
+		currency TEXT NOT NULL DEFAULT 'USD',
+		scraped_at TEXT NOT NULL DEFAULT (datetime('now'))
+	);
 	`
 	if _, err := DB.Exec(schema); err != nil {
 		return fmt.Errorf("exec schema: %w", err)
