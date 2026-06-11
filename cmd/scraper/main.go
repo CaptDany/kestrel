@@ -70,7 +70,7 @@ func handleScrape(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, 500, "create page: "+err.Error())
 		return
 	}
-	defer page.Close()
+	defer func() { _ = page.Close() }()
 
 	if _, err := page.Goto(req.URL, playwright.PageGotoOptions{
 		WaitUntil: playwright.WaitUntilStateNetworkidle,
@@ -132,7 +132,7 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 func jsonResp(w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(data)
+	_ = json.NewEncoder(w).Encode(data)
 }
 
 func jsonError(w http.ResponseWriter, status int, msg string) {
