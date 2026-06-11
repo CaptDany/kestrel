@@ -1,0 +1,115 @@
+{{template "header" .}}
+{{$data := .Data}}
+<div class="columns is-multiline">
+    <div class="column is-3">
+        <div class="box has-text-centered">
+            <p class="heading">Pending</p>
+            <p class="title">{{$data.pendingCount}}</p>
+        </div>
+    </div>
+    <div class="column is-3">
+        <div class="box has-text-centered">
+            <p class="heading">Saving</p>
+            <p class="title">{{$data.savingCount}}</p>
+        </div>
+    </div>
+    <div class="column is-3">
+        <div class="box has-text-centered">
+            <p class="heading">Purchased</p>
+            <p class="title">{{$data.purchasedCount}}</p>
+        </div>
+    </div>
+    <div class="column is-3">
+        <div class="box has-text-centered">
+            <p class="heading">Next Purchase</p>
+            <p class="title is-5">{{if $data.nextPurchase}}{{$data.nextPurchase}}{{else}}—{{end}}</p>
+        </div>
+    </div>
+</div>
+
+<div class="columns">
+    <div class="column is-6">
+        <div class="box">
+            <h2 class="subtitle">Quick Add Item</h2>
+            <form hx-post="/api/scrape" hx-ext="json-enc" hx-target="#scrape-result" hx-indicator="#scrape-spinner">
+                <div class="field has-addons">
+                    <div class="control is-expanded">
+                        <input class="input" type="url" name="url" placeholder="Paste an e-commerce URL..." required>
+                    </div>
+                    <div class="control">
+                        <button class="button is-info" type="submit">Extract</button>
+                    </div>
+                </div>
+            </form>
+            <div id="scrape-spinner" class="htmx-indicator" style="display:none;">
+                <progress class="progress is-small is-info" max="100">15%</progress>
+            </div>
+            <div id="scrape-result"></div>
+        </div>
+
+        <div class="box">
+            <h2 class="subtitle">Budget</h2>
+            <p>Mode: <strong>{{index $data.settings "budget_mode"}}</strong></p>
+            <p>Amount: <strong>{{index $data.settings "budget_amount"}}</strong></p>
+            <p>Sort: <strong>{{index $data.settings "sort_criteria"}}</strong></p>
+            <p>Purchase Mode: <strong>{{index $data.settings "purchase_mode"}}</strong></p>
+        </div>
+    </div>
+
+    <div class="column is-6">
+        <div class="box">
+            <h2 class="subtitle">Upcoming Schedule</h2>
+            {{if $data.plan}}
+            <table class="table is-fullwidth is-striped is-hoverable">
+                <thead>
+                    <tr><th>Date</th><th>Item</th><th>Amount</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                    {{range $data.plan}}
+                    {{if or (eq .Status "planned") (eq .Status "")}}
+                    <tr>
+                        <td>{{.ScheduledDate}}</td>
+                        <td><a href="{{.ItemURL}}" target="_blank" rel="noopener">{{.ItemTitle}}</a></td>
+                        <td>{{printf "%.2f" (deref .AmountAllocated)}}</td>
+                        <td><span class="tag is-info">{{.Status}}</span></td>
+                    </tr>
+                    {{end}}
+                    {{end}}
+                </tbody>
+            </table>
+            {{else}}
+            <p class="has-text-grey">No items scheduled.</p>
+            {{end}}
+            <button class="button is-primary mt-2" hx-post="/api/plan/generate" hx-ext="json-enc"
+                    hx-target="#plan-result" hx-indicator="#plan-spinner">Regenerate Plan</button>
+            <div id="plan-spinner" class="htmx-indicator" style="display:none;">
+                <progress class="progress is-small is-primary" max="100">15%</progress>
+            </div>
+            <div id="plan-result"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.body.addEventListener('htmx:afterRequest', function(evt) {
+    if (evt.target.id === 'scrape-result' && evt.detail.successful) {
+        const data = JSON.parse(evt.detail.xhr.responseText);
+        document.getElementById('scrape-result').innerHTML = `
+            <div class="box" style="margin-top:1rem;">
+                <p><strong>${data.title || 'Unknown'}</strong></p>
+                <p>Price: ${data.price ? data.price + ' ' + data.currency : 'Could not detect'}</p>
+                <button class="button is-small is-success mt-2"
+                    onclick="addItemFromScrape('${data.url}', '${(data.title||'').replace(/'/g, "\\'")}', ${data.price || 'null'}, '${data.currency || 'USD'}')">Add to List</button>
+            </div>`;
+    }
+    if (evt.target.id === 'plan-result' && evt.detail.successful) {
+        document.getElementById('plan-result').innerHTML = '<div class="notification is-success">Plan regenerated!</div>';
+        setTimeout(() => location.reload(), 1000);
+    }
+});
+function addItemFromScrape(url, title, price, currency) {
+    fetch('/api/items', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url, title, price, currency, price_confirmed: price!==null?1:0}) })
+    .then(r => { if (r.ok) { document.getElementById('scrape-result').innerHTML = '<div class="notification is-success">Item added!</div>'; setTimeout(() => location.reload(), 800); } });
+}
+</script>
+{{template "footer" .}}

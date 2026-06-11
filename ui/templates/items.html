@@ -1,0 +1,57 @@
+{{template "header" .}}
+<div class="level">
+    <div class="level-left">
+        <div class="buttons">
+            <a class="button is-primary" href="/items/new">Add Item</a>
+            <button class="button is-info" hx-post="/api/plan/generate" hx-ext="json-enc" hx-target="#plan-msg" hx-indicator="#plan-spinner">Generate Plan</button>
+        </div>
+    </div>
+    <div class="level-right">
+        <div class="field has-addons">
+            <p class="control"><a class="button is-small" href="/items">All</a></p>
+            <p class="control"><a class="button is-small" href="/items?status=pending">Pending</a></p>
+            <p class="control"><a class="button is-small" href="/items?status=saving">Saving</a></p>
+            <p class="control"><a class="button is-small" href="/items?status=purchased">Purchased</a></p>
+        </div>
+    </div>
+</div>
+<div id="plan-spinner" class="htmx-indicator" style="display:none;"><progress class="progress is-small is-info" max="100">15%</progress></div>
+<div id="plan-msg"></div>
+
+{{$items := .Data}}
+<div class="table-container">
+    <table class="table is-fullwidth is-striped is-hoverable">
+        <thead>
+            <tr><th>Title</th><th>Price</th><th>Priority</th><th>Status</th><th>Added</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+            {{range $items}}
+            <tr>
+                <td><a href="{{.URL}}" target="_blank" rel="noopener">{{.Title}}</a>{{if .Category}} <span class="tag is-light">{{.Category}}</span>{{end}}</td>
+                <td>{{if .Price}}{{printf "%.2f" .Price}} {{.Currency}}{{else}}—{{end}}</td>
+                <td>{{if eq .Priority 1}}<span class="tag is-danger">High</span>{{else if eq .Priority -1}}<span class="tag is-warning">Low</span>{{else}}<span class="tag">Normal</span>{{end}}</td>
+                <td>{{if eq .Status "pending"}}<span class="tag is-info">Pending</span>{{else if eq .Status "saving"}}<span class="tag is-warning">Saving</span>{{else if eq .Status "purchased"}}<span class="tag is-success">Purchased</span>{{else if eq .Status "skipped"}}<span class="tag is-light">Skipped</span>{{else}}<span class="tag">{{.Status}}</span>{{end}}</td>
+                <td>{{.CreatedAt}}</td>
+                <td>
+                    <div class="buttons are-small">
+                        <a class="button" href="/items/{{.ID}}/edit">Edit</a>
+                        <button class="button is-success" hx-post="/api/items/{{.ID}}/purchase" hx-target="closest tr" hx-swap="outerHTML" hx-ext="json-enc">Buy</button>
+                        <button class="button is-danger is-light" hx-delete="/api/items/{{.ID}}" hx-target="closest tr" hx-swap="outerHTML" hx-confirm="Delete this item?">Del</button>
+                    </div>
+                </td>
+            </tr>
+            {{else}}
+            <tr><td colspan="6" class="has-text-centered has-text-grey">No items yet. <a href="/items/new">Add one!</a></td></tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+<script>
+document.body.addEventListener('htmx:afterRequest', function(evt) {
+    if (evt.target.id === 'plan-msg' && evt.detail.successful) {
+        document.getElementById('plan-msg').innerHTML = '<div class="notification is-success">Plan generated!</div>';
+        setTimeout(() => location.reload(), 1000);
+    }
+});
+</script>
+{{template "footer" .}}

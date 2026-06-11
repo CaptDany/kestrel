@@ -1,0 +1,29 @@
+version: "3.9"
+services:
+  kestrel:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - kestrel_data:/home/kestrel/data
+    environment:
+      - KESTREL_PORT=8000
+      - KESTREL_DB_PATH=/home/kestrel/data/kestrel.db
+      - KESTREL_EXTRACTOR_MODE=playwright
+      - KESTREL_SCRAPER_URL=http://scraper:8001
+    restart: unless-stopped
+    depends_on:
+      - scraper
+
+  scraper:
+    build:
+      context: .
+      dockerfile: Dockerfile.scraper
+    ports:
+      - "8001:8001"
+    environment:
+      - PORT=8001
+    restart: unless-stopped
+
+volumes:
+  kestrel_data:

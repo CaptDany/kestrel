@@ -1,0 +1,210 @@
+{{template "header" .}}
+{{$data := .Data}}
+{{$settings := $data.settings}}
+{{$paydays := $data.paydays}}
+{{$budgetEntries := $data.budgetEntries}}
+
+<div class="columns">
+    <div class="column is-6">
+        <div class="box">
+            <h2 class="subtitle">General Settings</h2>
+            <form x-data="settingsForm()" @submit.prevent="save">
+                <div class="field">
+                    <label class="label">Budget Mode</label>
+                    <div class="control">
+                        <div class="select is-fullwidth">
+                            <select name="budget_mode" x-model="budgetMode">
+                                <option value="per_payday">Per Payday (fixed amount each cycle)</option>
+                                <option value="flexible">Flexible (base + bonuses)</option>
+                                <option value="total">Total Pool (plan within a total budget)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Budget Amount</label>
+                    <div class="control"><input class="input" type="number" step="0.01" name="budget_amount" x-model="budgetAmount" placeholder="0.00"></div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Purchase Mode</label>
+                    <div class="control">
+                        <div class="select is-fullwidth">
+                            <select name="purchase_mode" x-model="purchaseMode">
+                                <option value="as_many_as_possible">As Many As Possible (fill the budget)</option>
+                                <option value="one">One At A Time (one item per cycle)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Sort Criteria</label>
+                    <div class="control">
+                        <div class="select is-fullwidth">
+                            <select name="sort_criteria" x-model="sortCriteria">
+                                <option value="price_asc">Cheapest First</option>
+                                <option value="price_desc">Most Expensive First</option>
+                                <option value="priority">Priority (high first)</option>
+                                <option value="date_added">Date Added (oldest first)</option>
+                                <option value="desired_date">Desired Date (earliest first)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Currency</label>
+                    <div class="control"><input class="input" type="text" name="currency" x-model="currency" placeholder="USD" maxlength="3"></div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Extractor Mode</label>
+                    <div class="control">
+                        <div class="select is-fullwidth">
+                            <select name="extractor_mode" x-model="extractorMode">
+                                <option value="http">HTTP Scraper (lightweight, no JS)</option>
+                                <option value="playwright">Playwright (full browser, handles JS sites)</option>
+                                <option value="external">External Scraper API</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field" x-show="extractorMode === 'external'">
+                    <label class="label">External Scraper URL</label>
+                    <div class="control"><input class="input" type="url" name="scraper_url" x-model="scraperUrl" placeholder="http://scraper:8001"></div>
+                </div>
+
+                <div class="field"><button class="button is-primary" type="submit">Save Settings</button></div>
+            </form>
+        </div>
+    </div>
+
+    <div class="column is-6">
+        <div class="box">
+            <h2 class="subtitle">Paydays</h2>
+            <form x-data="paydayForm()" @submit.prevent="addPayday" class="mb-3">
+                <div class="field has-addons">
+                    <div class="control">
+                        <div class="select">
+                            <select name="frequency" x-model="frequency">
+                                <option value="monthly">Monthly</option>
+                                <option value="biweekly">Biweekly</option>
+                                <option value="weekly">Weekly</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="control" x-show="frequency === 'monthly'">
+                        <input class="input" type="number" x-model="dayOfMonth" placeholder="Day (1-28 / 99=last)" min="1" max="99" style="width:160px">
+                    </div>
+                    <div class="control">
+                        <input class="input" type="date" x-model="nextDate" placeholder="Next payday" style="width:160px">
+                    </div>
+                    <div class="control">
+                        <input class="input" type="text" x-model="label" placeholder="Label" style="width:120px">
+                    </div>
+                    <div class="control"><button class="button is-success" type="submit">Add</button></div>
+                </div>
+            </form>
+
+            <table class="table is-fullwidth">
+                <thead><tr><th>Label</th><th>Frequency</th><th>Next Date</th><th>Active</th><th></th></tr></thead>
+                <tbody>
+                    {{range $paydays}}
+                    <tr>
+                        <td>{{.Label}}</td>
+                        <td>{{.Frequency}}</td>
+                        <td>{{derefs .NextDate}}</td>
+                        <td><input type="checkbox" {{if eq .Active 1}}checked{{end}} onchange="togglePayday({{.ID}}, this.checked)"></td>
+                        <td><button class="button is-small is-danger is-light" onclick="deletePayday({{.ID}})">Delete</button></td>
+                    </tr>
+                    {{else}}
+                    <tr><td colspan="5" class="has-text-grey has-text-centered">No paydays configured.</td></tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="box">
+            <h2 class="subtitle">One-Time Budget Entries</h2>
+            <p class="help">Add bonuses, pay raises, or extra funds for specific pay cycles.</p>
+            <form x-data="budgetEntryForm()" @submit.prevent="addBudgetEntry">
+                <div class="field has-addons">
+                    <div class="control"><input class="input" type="number" step="0.01" x-model="amount" placeholder="Amount" style="width:120px" required></div>
+                    <div class="control"><input class="input" type="date" x-model="effectiveDate" required style="width:160px"></div>
+                    <div class="control"><input class="input" type="text" x-model="label" placeholder="Label (e.g. Bonus)" style="width:140px"></div>
+                    <div class="control"><button class="button is-success" type="submit">Add</button></div>
+                </div>
+            </form>
+
+            <table class="table is-fullwidth">
+                <thead><tr><th>Amount</th><th>Label</th><th>Cycle Date</th><th></th></tr></thead>
+                <tbody>
+                    {{range $budgetEntries}}
+                    <tr id="be-{{.ID}}">
+                        <td>{{printf "%.2f" .Amount}}</td>
+                        <td>{{.Label}}</td>
+                        <td>{{.EffectiveDate}}</td>
+                        <td><button class="button is-small is-danger is-light" onclick="deleteBudgetEntry({{.ID}})">Delete</button></td>
+                    </tr>
+                    {{else}}
+                    <tr><td colspan="4" class="has-text-grey has-text-centered">No bonus entries.</td></tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+function settingsForm() {
+    return {
+        budgetMode: '{{index $settings "budget_mode"}}',
+        budgetAmount: '{{index $settings "budget_amount"}}',
+        purchaseMode: '{{index $settings "purchase_mode"}}',
+        sortCriteria: '{{index $settings "sort_criteria"}}',
+        currency: '{{index $settings "currency"}}',
+        extractorMode: '{{index $settings "extractor_mode"}}',
+        scraperUrl: '{{index $settings "scraper_url"}}',
+        save() {
+            fetch('/api/settings', { method:'PUT', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ budget_mode:this.budgetMode, budget_amount:this.budgetAmount,
+                    purchase_mode:this.purchaseMode, sort_criteria:this.sortCriteria, currency:this.currency,
+                    extractor_mode:this.extractorMode, scraper_url:this.scraperUrl })
+            }).then(r => { if(r.ok) alert('Settings saved!'); });
+        }
+    };
+}
+function paydayForm() {
+    return {
+        frequency:'monthly', dayOfMonth:1, nextDate:'', label:'Payday',
+        addPayday() {
+            fetch('/api/paydays', { method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ frequency:this.frequency, day_of_month:this.frequency==='monthly'?parseInt(this.dayOfMonth):null,
+                    next_date:this.nextDate||null, label:this.label||'Payday', interval:1 })
+            }).then(r => { if(r.ok) location.reload(); });
+        }
+    };
+}
+function togglePayday(id, active) {
+    fetch('/api/paydays/'+id, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({active:active?1:0}) });
+}
+function deletePayday(id) {
+    if(confirm('Delete this payday?')) fetch('/api/paydays/'+id, {method:'DELETE'}).then(r => { if(r.ok) location.reload(); });
+}
+function budgetEntryForm() {
+    return { amount:'', effectiveDate:'', label:'',
+        addBudgetEntry() {
+            fetch('/api/budget-entries', { method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ amount:parseFloat(this.amount), effective_date:this.effectiveDate, label:this.label||'' })
+            }).then(r => { if(r.ok) location.reload(); });
+        }
+    };
+}
+function deleteBudgetEntry(id) {
+    if(confirm('Delete this entry?')) fetch('/api/budget-entries/'+id, {method:'DELETE'}).then(r => { if(r.ok) location.reload(); });
+}
+</script>
+{{template "footer" .}}

@@ -1,0 +1,23 @@
+.htmx-indicator {
+    opacity: 0;
+    transition: opacity 200ms ease-in;
+}
+.htmx-request .htmx-indicator {
+    opacity: 1;
+}
+.htmx-request.htmx-indicator {
+    opacity: 1;
+}
+tr.htmx-swapping {
+    opacity: 0;
+    transition: opacity 200ms ease-out;
+}
+.navbar {
+    border-bottom: 1px solid hsl(0, 0%, 21%);
+}
+.table th {
+    white-space: nowrap;
+}
+.box {
+    height: 100%;
+}

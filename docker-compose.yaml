@@ -1,0 +1,15 @@
+version: "3.9"
+services:
+  kestrel:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - kestrel_data:/home/kestrel/data
+    environment:
+      - KESTREL_PORT=8000
+      - KESTREL_DB_PATH=/home/kestrel/data/kestrel.db
+    restart: unless-stopped
+
+volumes:
+  kestrel_data:

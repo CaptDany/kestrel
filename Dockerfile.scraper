@@ -1,0 +1,16 @@
+FROM golang:1.26-alpine AS builder
+WORKDIR /build
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 go build -o scraper -ldflags="-s -w" ./cmd/scraper/
+
+FROM mcr.microsoft.com/playwright:v1.52.0-jammy
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN adduser --uid 568 --disabled-password --gecos "" kestrel
+USER kestrel
+WORKDIR /home/kestrel
+COPY --from=builder /build/scraper .
+EXPOSE 8001
+ENV PORT=8001
+CMD ["./scraper"]
