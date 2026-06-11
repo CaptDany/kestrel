@@ -91,23 +91,21 @@ func (p *Planner) Generate() error {
 						return err
 					}
 					if saved > 0 {
-						db.DeleteItemSavings(item.ID)
+						_ = db.DeleteItemSavings(item.ID)
 					}
 					if item.Status == "saving" {
 						item.Status = "pending"
-						db.UpdateItem(&item)
+						_ = db.UpdateItem(&item)
 					}
-					remaining -= needed
 					break
 				} else if remaining > 0 {
 					newSaved := saved + remaining
 					itemSavings[item.ID] = newSaved
-					db.UpsertItemSavings(item.ID, newSaved)
+					_ = db.UpsertItemSavings(item.ID, newSaved)
 					if item.Status != "saving" {
 						item.Status = "saving"
-						db.UpdateItem(&item)
+						_ = db.UpdateItem(&item)
 					}
-					remaining = 0
 					break
 				}
 			}
@@ -129,20 +127,20 @@ func (p *Planner) Generate() error {
 						return err
 					}
 					if saved > 0 {
-						db.DeleteItemSavings(item.ID)
+						_ = db.DeleteItemSavings(item.ID)
 					}
 					if item.Status == "saving" {
 						item.Status = "pending"
-						db.UpdateItem(&item)
+						_ = db.UpdateItem(&item)
 					}
 					remaining -= needed
 				} else if remaining > 0 {
 					newSaved := saved + remaining
 					itemSavings[item.ID] = newSaved
-					db.UpsertItemSavings(item.ID, newSaved)
+					_ = db.UpsertItemSavings(item.ID, newSaved)
 					if item.Status != "saving" {
 						item.Status = "saving"
-						db.UpdateItem(&item)
+						_ = db.UpdateItem(&item)
 					}
 					remaining = 0
 				}
@@ -222,7 +220,7 @@ func (p *Planner) getCycleBudget(date string) float64 {
 	mode := p.settings["budget_mode"]
 	baseAmount := 0.0
 	if v := p.settings["budget_amount"]; v != "" {
-		fmt.Sscanf(v, "%f", &baseAmount)
+		_, _ = fmt.Sscanf(v, "%f", &baseAmount)
 	}
 
 	switch mode {
@@ -265,7 +263,7 @@ func (p *Planner) getTotalRemainingBudget() float64 {
 
 	baseAmount := 0.0
 	if v := p.settings["budget_amount"]; v != "" {
-		fmt.Sscanf(v, "%f", &baseAmount)
+		_, _ = fmt.Sscanf(v, "%f", &baseAmount)
 	}
 
 	return math.Max(0, baseAmount-purchased)

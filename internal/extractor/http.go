@@ -29,7 +29,7 @@ func fetchURL(rawURL string) (bodyReader io.Reader, _ error) {
 	if err != nil {
 		return nil, fmt.Errorf("do request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode >= 400 {
 		return nil, fmt.Errorf("http %d", resp.StatusCode)

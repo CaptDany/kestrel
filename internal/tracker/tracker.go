@@ -50,10 +50,10 @@ func (t *Tracker) RefreshConfig() {
 		}
 	}
 	if pct := settings["tracker_drop_threshold_pct"]; pct != "" {
-		fmt.Sscanf(pct, "%f", &t.thresholdPct)
+		_, _ = fmt.Sscanf(pct, "%f", &t.thresholdPct)
 	}
 	if abs := settings["tracker_drop_threshold_abs"]; abs != "" {
-		fmt.Sscanf(abs, "%f", &t.thresholdAbs)
+		_, _ = fmt.Sscanf(abs, "%f", &t.thresholdAbs)
 	}
 
 	if t.interval < 30*time.Second {
@@ -167,7 +167,7 @@ func (t *Tracker) checkItem(item db.Item) {
 	}
 
 	subject := fmt.Sprintf("Price dropped on: %s", item.Title)
-	body := fmt.Sprintf("Price dropped on one of your tracked items!\n\n")
+	body := "Price dropped on one of your tracked items!\n\n"
 	body += fmt.Sprintf("Item: %s\n", item.Title)
 	body += fmt.Sprintf("URL: %s\n", item.URL)
 	body += fmt.Sprintf("Previous low: $%.2f\n", *low)

@@ -130,7 +130,7 @@ func (e *Engine) check() {
 			}
 			if err := n.Send(msg); err != nil {
 				log.Printf("notification engine: %s send failed: %v", n.Name(), err)
-				db.LogNotification(&db.NotificationLog{
+				_, _ = db.LogNotification(&db.NotificationLog{
 					ItemID:    &item.ItemID,
 					Type:      "purchase_ready",
 					Channel:   n.Name(),
@@ -140,7 +140,7 @@ func (e *Engine) check() {
 				})
 				continue
 			}
-			db.LogNotification(&db.NotificationLog{
+			_, _ = db.LogNotification(&db.NotificationLog{
 				ItemID:    &item.ItemID,
 				Type:      "purchase_ready",
 				Channel:   n.Name(),
@@ -174,7 +174,7 @@ func (e *Engine) isQuietHours() bool {
 }
 
 func (e *Engine) buildMessageBody(msg Message) string {
-	body := fmt.Sprintf("Your item is now ready to be purchased!\n\n")
+	body := "Your item is now ready to be purchased!\n\n"
 	body += fmt.Sprintf("Item: %s\n", msg.ItemTitle)
 	if msg.ItemURL != "" {
 		body += fmt.Sprintf("URL: %s\n", msg.ItemURL)
@@ -223,7 +223,7 @@ func (e *Engine) Notify(msg Message) bool {
 		}
 		if err := n.Send(msg); err != nil {
 			log.Printf("notification engine: %s send failed for item %d: %v", n.Name(), msg.ItemID, err)
-			db.LogNotification(&db.NotificationLog{
+			_, _ = db.LogNotification(&db.NotificationLog{
 				ItemID:    &msg.ItemID,
 				Type:      msg.Type,
 				Channel:   n.Name(),
@@ -233,7 +233,7 @@ func (e *Engine) Notify(msg Message) bool {
 			})
 			continue
 		}
-		db.LogNotification(&db.NotificationLog{
+		_, _ = db.LogNotification(&db.NotificationLog{
 			ItemID:    &msg.ItemID,
 			Type:      msg.Type,
 			Channel:   n.Name(),

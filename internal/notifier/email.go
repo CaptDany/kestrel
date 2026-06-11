@@ -78,7 +78,7 @@ func (e *EmailNotifier) sendSTARTTLS(addr string, auth smtp.Auth, body string) e
 	if err != nil {
 		return fmt.Errorf("dial: %w", err)
 	}
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 
 	if err := client.StartTLS(&tls.Config{ServerName: e.host}); err != nil {
 		return fmt.Errorf("starttls: %w", err)
@@ -116,10 +116,10 @@ func (e *EmailNotifier) sendSSL(addr string, auth smtp.Auth, body string) error 
 	}
 	client, err := smtp.NewClient(conn, e.host)
 	if err != nil {
-		conn.Close()
+		_ = conn.Close()
 		return fmt.Errorf("new client: %w", err)
 	}
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 
 	if auth != nil {
 		if err := client.Auth(auth); err != nil {
@@ -153,17 +153,17 @@ func (e *EmailNotifier) buildEmail(subject, body string) string {
 
 func (e *EmailNotifier) buildBody(msg Message) string {
 	var b strings.Builder
-	b.WriteString(fmt.Sprintf("Item: %s\n", msg.ItemTitle))
+	fmt.Fprintf(&b, "Item: %s\n", msg.ItemTitle)
 	if msg.ItemURL != "" {
-		b.WriteString(fmt.Sprintf("URL: %s\n", msg.ItemURL))
+		fmt.Fprintf(&b, "URL: %s\n", msg.ItemURL)
 	}
 	if msg.Price > 0 {
-		b.WriteString(fmt.Sprintf("Price: %.2f\n", msg.Price))
+		fmt.Fprintf(&b, "Price: %.2f\n", msg.Price)
 	}
 	if msg.ScheduledDate != "" {
-		b.WriteString(fmt.Sprintf("Scheduled: %s\n", msg.ScheduledDate))
+		fmt.Fprintf(&b, "Scheduled: %s\n", msg.ScheduledDate)
 	}
-	b.WriteString(fmt.Sprintf("\n---\nSent by kestrel Purchase Planner"))
+	b.WriteString("\n---\nSent by kestrel Purchase Planner")
 	return b.String()
 }
 

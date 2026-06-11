@@ -80,7 +80,7 @@ func scanItems(query string, args ...interface{}) ([]Item, error) {
 	if err != nil {
 		return nil, fmt.Errorf("query items: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var items []Item
 	for rows.Next() {
@@ -107,7 +107,7 @@ func GetPaydays() ([]Payday, error) {
 	if err != nil {
 		return nil, fmt.Errorf("query paydays: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var paydays []Payday
 	for rows.Next() {
@@ -127,7 +127,7 @@ func GetActivePaydays() ([]Payday, error) {
 	if err != nil {
 		return nil, fmt.Errorf("query active paydays: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var paydays []Payday
 	for rows.Next() {

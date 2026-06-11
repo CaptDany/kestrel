@@ -28,6 +28,4 @@ func lowestPrice(itemID int64) *float64 {
 	return p
 }
 
-func itemPrice(item *db.Item) *float64 {
-	return item.Price
-}
+

@@ -25,7 +25,17 @@ func New(addr string, tpl *template.Template, staticFS http.FileSystem) *Server 
 	s.Router = chi.NewRouter()
 	s.Router.Use(middleware.Logger)
 	s.Router.Use(middleware.Recoverer)
-	s.Router.Use(middleware.RealIP)
+	s.Router.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+				parts := strings.Split(xff, ",")
+				r.RemoteAddr = strings.TrimSpace(parts[0])
+			} else if xri := r.Header.Get("X-Real-IP"); xri != "" {
+				r.RemoteAddr = xri
+			}
+			next.ServeHTTP(w, r)
+		})
+	})
 
 	s.Handler = handler.NewHandler(s.Tpl)
 

@@ -28,7 +28,7 @@ func Init(dbPath string) error {
 
 func Close() {
 	if DB != nil {
-		DB.Close()
+		_ = DB.Close()
 	}
 }
 

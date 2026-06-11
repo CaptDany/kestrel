@@ -48,17 +48,10 @@ func (h *Handler) render(w http.ResponseWriter, name string, data pageData) {
 	}
 }
 
-func (h *Handler) renderFragment(w http.ResponseWriter, name string, data interface{}) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := h.tpl.ExecuteTemplate(w, name, data); err != nil {
-		log.Printf("render fragment error: %v", err)
-	}
-}
-
 func jsonResp(w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(data)
+	_ = json.NewEncoder(w).Encode(data)
 }
 
 func jsonErr(w http.ResponseWriter, status int, msg string) {
@@ -332,7 +325,7 @@ func (h *Handler) SendTestNotification(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Channel string `json:"channel"`
 	}
-	json.NewDecoder(r.Body).Decode(&req)
+	_ = json.NewDecoder(r.Body).Decode(&req)
 
 	if err := h.notify.SendTest(req.Channel); err != nil {
 		jsonErr(w, 500, err.Error())

@@ -38,7 +38,7 @@ func (p *PlaywrightExtractor) Extract(rawURL string) (*Result, error) {
 	if err != nil {
 		return nil, fmt.Errorf("playwright scrape request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	var result Result
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
