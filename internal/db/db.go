@@ -95,6 +95,17 @@ func migrate() error {
 		accumulated REAL NOT NULL DEFAULT 0,
 		updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 	);
+
+	CREATE TABLE IF NOT EXISTS notification_log (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		item_id INTEGER REFERENCES items(id),
+		type TEXT NOT NULL,
+		channel TEXT NOT NULL,
+		subject TEXT NOT NULL DEFAULT '',
+		body TEXT NOT NULL DEFAULT '',
+		sent_at TEXT NOT NULL DEFAULT (datetime('now')),
+		delivered INTEGER NOT NULL DEFAULT 0
+	);
 	`
 	if _, err := DB.Exec(schema); err != nil {
 		return fmt.Errorf("exec schema: %w", err)

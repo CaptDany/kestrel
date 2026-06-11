@@ -128,6 +128,85 @@
         </div>
 
         <div class="box">
+            <h2 class="subtitle">Notifications</h2>
+            <form x-data="notifForm()" @submit.prevent="save">
+                <div class="field">
+                    <label class="label">Enable Notifications</label>
+                    <div class="control">
+                        <input type="checkbox" x-model="enabled" @change="save">
+                    </div>
+                </div>
+
+                <template x-if="enabled">
+                    <div>
+                        <h3 class="subtitle is-6 mt-3">Email</h3>
+                        <div class="field">
+                            <label class="label">Enable Email</label>
+                            <div class="control">
+                                <input type="checkbox" x-model="emailEnabled" @change="save">
+                            </div>
+                        </div>
+                        <template x-if="emailEnabled">
+                            <div>
+                                <div class="field">
+                                    <label class="label">SMTP Host</label>
+                                    <div class="control"><input class="input" type="text" x-model="smtpHost" @change.debounce="save" placeholder="smtp.gmail.com"></div>
+                                </div>
+                                <div class="field">
+                                    <label class="label">SMTP Port</label>
+                                    <div class="control"><input class="input" type="number" x-model="smtpPort" @change.debounce="save" placeholder="587"></div>
+                                </div>
+                                <div class="field">
+                                    <label class="label">SMTP User</label>
+                                    <div class="control"><input class="input" type="text" x-model="smtpUser" @change.debounce="save" placeholder="user@gmail.com"></div>
+                                </div>
+                                <div class="field">
+                                    <label class="label">SMTP Password</label>
+                                    <div class="control"><input class="input" type="password" x-model="smtpPass" @change.debounce="save" placeholder="app password"></div>
+                                </div>
+                                <div class="field">
+                                    <label class="label">From Address</label>
+                                    <div class="control"><input class="input" type="email" x-model="smtpFrom" @change.debounce="save" placeholder="kestrel@example.com"></div>
+                                </div>
+                                <div class="field">
+                                    <label class="label">To Address</label>
+                                    <div class="control"><input class="input" type="email" x-model="smtpTo" @change.debounce="save" placeholder="you@example.com"></div>
+                                </div>
+                                <div class="field">
+                                    <button class="button is-small is-info" type="button" @click="sendTest('email')">Send Test Email</button>
+                                    <span x-show="testResult" x-text="testResult" class="ml-2 has-text-grey"></span>
+                                </div>
+                            </div>
+                        </template>
+
+                        <h3 class="subtitle is-6 mt-3">Push Notifications</h3>
+                        <div class="field">
+                            <label class="label">Enable Push</label>
+                            <div class="control">
+                                <input type="checkbox" x-model="pushEnabled" disabled>
+                                <span class="help">Coming soon — Apprise / mobile push integration</span>
+                            </div>
+                        </div>
+
+                        <h3 class="subtitle is-6 mt-3">Quiet Hours</h3>
+                        <p class="help">Suppress notifications during these hours.</p>
+                        <div class="field has-addons">
+                            <div class="control">
+                                <input class="input" type="time" x-model="quietStart" @change.debounce="save" style="width:140px">
+                            </div>
+                            <div class="control">
+                                <span class="button is-static">to</span>
+                            </div>
+                            <div class="control">
+                                <input class="input" type="time" x-model="quietEnd" @change.debounce="save" style="width:140px">
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </form>
+        </div>
+
+        <div class="box">
             <h2 class="subtitle">One-Time Budget Entries</h2>
             <p class="help">Add bonuses, pay raises, or extra funds for specific pay cycles.</p>
             <form x-data="budgetEntryForm()" @submit.prevent="addBudgetEntry">
@@ -174,6 +253,46 @@ function settingsForm() {
                     purchase_mode:this.purchaseMode, sort_criteria:this.sortCriteria, currency:this.currency,
                     extractor_mode:this.extractorMode, scraper_url:this.scraperUrl })
             }).then(r => { if(r.ok) alert('Settings saved!'); });
+        }
+    };
+}
+function notifForm() {
+    return {
+        enabled: '{{index $settings "notify_enabled"}}' === 'true',
+        emailEnabled: '{{index $settings "notify_email_enabled"}}' === 'true',
+        pushEnabled: false,
+        smtpHost: '{{index $settings "notify_smtp_host"}}',
+        smtpPort: '{{index $settings "notify_smtp_port"}}',
+        smtpUser: '{{index $settings "notify_smtp_user"}}',
+        smtpPass: '{{index $settings "notify_smtp_pass"}}',
+        smtpFrom: '{{index $settings "notify_smtp_from"}}',
+        smtpTo: '{{index $settings "notify_smtp_to"}}',
+        quietStart: '{{index $settings "notify_quiet_start"}}',
+        quietEnd: '{{index $settings "notify_quiet_end"}}',
+        testResult: '',
+        save() {
+            fetch('/api/settings', { method:'PUT', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({
+                    notify_enabled: this.enabled ? 'true' : 'false',
+                    notify_email_enabled: this.emailEnabled ? 'true' : 'false',
+                    notify_smtp_host: this.smtpHost,
+                    notify_smtp_port: this.smtpPort,
+                    notify_smtp_user: this.smtpUser,
+                    notify_smtp_pass: this.smtpPass,
+                    notify_smtp_from: this.smtpFrom,
+                    notify_smtp_to: this.smtpTo,
+                    notify_quiet_start: this.quietStart,
+                    notify_quiet_end: this.quietEnd,
+                })
+            }).then(r => { if(r.ok) { this.testResult = 'Saved!'; setTimeout(() => this.testResult = '', 2000); } });
+        },
+        sendTest(channel) {
+            this.testResult = 'Sending...';
+            fetch('/api/notify/test', { method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ channel })
+            }).then(r => {
+                this.testResult = r.ok ? 'Test sent successfully!' : 'Test failed - check server logs';
+            }).catch(() => { this.testResult = 'Request failed'; });
         }
     };
 }

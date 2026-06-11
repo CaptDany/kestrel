@@ -9,12 +9,14 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/CaptDany/kestrel/internal/handler"
+	"github.com/CaptDany/kestrel/internal/notifier"
 )
 
 type Server struct {
 	Router chi.Router
 	Addr   string
 	Tpl    *template.Template
+	Handler *handler.Handler
 }
 
 func New(addr string, tpl *template.Template, staticFS http.FileSystem) *Server {
@@ -24,36 +26,43 @@ func New(addr string, tpl *template.Template, staticFS http.FileSystem) *Server 
 	s.Router.Use(middleware.Recoverer)
 	s.Router.Use(middleware.RealIP)
 
-	h := handler.NewHandler(s.Tpl)
+	s.Handler = handler.NewHandler(s.Tpl)
 
 	s.Router.Get("/static/*", func(w http.ResponseWriter, r *http.Request) {
 		r.URL.Path = strings.TrimPrefix(r.URL.Path, "/static")
 		http.FileServer(staticFS).ServeHTTP(w, r)
 	})
 
-	s.Router.Get("/", h.Dashboard)
-	s.Router.Get("/items", h.ItemsPage)
-	s.Router.Get("/items/new", h.ItemNew)
-	s.Router.Get("/items/{id}/edit", h.ItemEdit)
-	s.Router.Get("/schedule", h.SchedulePage)
-	s.Router.Get("/settings", h.SettingsPage)
+	s.Router.Get("/", s.Handler.Dashboard)
+	s.Router.Get("/items", s.Handler.ItemsPage)
+	s.Router.Get("/items/new", s.Handler.ItemNew)
+	s.Router.Get("/items/{id}/edit", s.Handler.ItemEdit)
+	s.Router.Get("/schedule", s.Handler.SchedulePage)
+	s.Router.Get("/settings", s.Handler.SettingsPage)
 
-	s.Router.Post("/api/items", h.CreateItem)
-	s.Router.Put("/api/items/{id}", h.UpdateItem)
-	s.Router.Delete("/api/items/{id}", h.DeleteItem)
-	s.Router.Post("/api/items/{id}/purchase", h.PurchaseItem)
-	s.Router.Post("/api/scrape", h.ScrapeURL)
-	s.Router.Post("/api/plan/generate", h.GeneratePlan)
-	s.Router.Get("/api/plan", h.GetPlan)
-	s.Router.Put("/api/settings", h.UpdateSettings)
-	s.Router.Post("/api/paydays", h.CreatePayday)
-	s.Router.Put("/api/paydays/{id}", h.UpdatePayday)
-	s.Router.Delete("/api/paydays/{id}", h.DeletePayday)
-	s.Router.Get("/api/budget-entries", h.GetBudgetEntries)
-	s.Router.Post("/api/budget-entries", h.CreateBudgetEntry)
-	s.Router.Delete("/api/budget-entries/{id}", h.DeleteBudgetEntry)
+	s.Router.Post("/api/items", s.Handler.CreateItem)
+	s.Router.Put("/api/items/{id}", s.Handler.UpdateItem)
+	s.Router.Delete("/api/items/{id}", s.Handler.DeleteItem)
+	s.Router.Post("/api/items/{id}/purchase", s.Handler.PurchaseItem)
+	s.Router.Post("/api/scrape", s.Handler.ScrapeURL)
+	s.Router.Post("/api/plan/generate", s.Handler.GeneratePlan)
+	s.Router.Get("/api/plan", s.Handler.GetPlan)
+	s.Router.Put("/api/settings", s.Handler.UpdateSettings)
+	s.Router.Post("/api/paydays", s.Handler.CreatePayday)
+	s.Router.Put("/api/paydays/{id}", s.Handler.UpdatePayday)
+	s.Router.Delete("/api/paydays/{id}", s.Handler.DeletePayday)
+	s.Router.Get("/api/budget-entries", s.Handler.GetBudgetEntries)
+	s.Router.Post("/api/budget-entries", s.Handler.CreateBudgetEntry)
+	s.Router.Delete("/api/budget-entries/{id}", s.Handler.DeleteBudgetEntry)
+	s.Router.Post("/api/notify/test", s.Handler.SendTestNotification)
 
 	return s
+}
+
+func (s *Server) SetNotifierEngine(e *notifier.Engine) {
+	if s.Handler != nil {
+		s.Handler.SetNotifierEngine(e)
+	}
 }
 
 func (s *Server) Start() error {

@@ -1,16 +1,20 @@
 package main
 
 import (
+	"context"
 	"embed"
 	"html/template"
 	"io/fs"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"syscall"
 
 	"github.com/CaptDany/kestrel/internal/config"
 	"github.com/CaptDany/kestrel/internal/db"
+	"github.com/CaptDany/kestrel/internal/notifier"
 	"github.com/CaptDany/kestrel/internal/server"
 )
 
@@ -61,6 +65,21 @@ func main() {
 		log.Fatalf("static sub: %v", err)
 	}
 
+	notifEngine := notifier.New([]notifier.Notifier{
+		notifier.NewEmailNotifier(),
+		notifier.NewPushNotifier(),
+	})
+
 	srv := server.New(cfg.Addr(), tpl, http.FS(staticSub))
-	log.Fatal(srv.Start())
+	srv.SetNotifierEngine(notifEngine)
+
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
+
+	go notifEngine.Start(ctx)
+
+	log.Printf("kestrel starting on %s", cfg.Addr())
+	if err := srv.Start(); err != nil {
+		log.Fatalf("server: %v", err)
+	}
 }

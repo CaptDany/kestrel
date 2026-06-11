@@ -53,6 +53,17 @@ type PurchasePlan struct {
 	ItemURL         string   `json:"item_url"`
 }
 
+type NotificationLog struct {
+	ID        int64  `json:"id"`
+	ItemID    *int64 `json:"item_id"`
+	Type      string `json:"type"`
+	Channel   string `json:"channel"`
+	Subject   string `json:"subject"`
+	Body      string `json:"body"`
+	SentAt    string `json:"sent_at"`
+	Delivered int    `json:"delivered"`
+}
+
 var defaultSettings = map[string]string{
 	"budget_mode":      "per_payday",
 	"budget_amount":    "0",
@@ -62,4 +73,15 @@ var defaultSettings = map[string]string{
 	"extractor_mode":   "http",
 	"scraper_url":      "",
 	"playwright_enabled": "false",
+	"notify_enabled":       "false",
+	"notify_email_enabled": "false",
+	"notify_smtp_host":     "",
+	"notify_smtp_port":     "587",
+	"notify_smtp_user":     "",
+	"notify_smtp_pass":     "",
+	"notify_smtp_from":     "",
+	"notify_smtp_to":       "",
+	"notify_push_enabled":  "false",
+	"notify_quiet_start":   "22:00",
+	"notify_quiet_end":     "08:00",
 }

@@ -12,14 +12,20 @@ import (
 	"github.com/CaptDany/kestrel/internal/db"
 	"github.com/CaptDany/kestrel/internal/engine"
 	"github.com/CaptDany/kestrel/internal/extractor"
+	"github.com/CaptDany/kestrel/internal/notifier"
 )
 
 type Handler struct {
-	tpl *template.Template
+	tpl    *template.Template
+	notify *notifier.Engine
 }
 
 func NewHandler(tpl *template.Template) *Handler {
 	return &Handler{tpl: tpl}
+}
+
+func (h *Handler) SetNotifierEngine(e *notifier.Engine) {
+	h.notify = e
 }
 
 type pageData struct {
@@ -300,7 +306,27 @@ func (h *Handler) UpdateSettings(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	if h.notify != nil {
+		h.notify.RefreshConfig()
+	}
 	jsonResp(w, 200, map[string]string{"status": "saved"})
+}
+
+func (h *Handler) SendTestNotification(w http.ResponseWriter, r *http.Request) {
+	if h.notify == nil {
+		jsonErr(w, 500, "notification engine not initialized")
+		return
+	}
+	var req struct {
+		Channel string `json:"channel"`
+	}
+	json.NewDecoder(r.Body).Decode(&req)
+
+	if err := h.notify.SendTest(req.Channel); err != nil {
+		jsonErr(w, 500, err.Error())
+		return
+	}
+	jsonResp(w, 200, map[string]string{"status": "test sent"})
 }
 
 // ─── Paydays ────────────────────────────────────────────────────────────────
