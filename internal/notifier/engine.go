@@ -189,6 +189,74 @@ func (e *Engine) buildMessageBody(msg Message) string {
 	return body
 }
 
+// Notify dispatches a message to all enabled notifiers with dedup and quiet hours.
+// Returns true if at least one notifier delivered the message.
+func (e *Engine) Notify(msg Message) bool {
+	e.mu.RLock()
+	enabled := e.cfg.Get("notify_enabled", "false") == "true"
+	e.mu.RUnlock()
+
+	if !enabled {
+		return false
+	}
+
+	if e.isQuietHours() {
+		log.Printf("notification engine: quiet hours, skipping %s for item %d", msg.Type, msg.ItemID)
+		return false
+	}
+
+	dedupKey := e.dedupKey(msg)
+	if dedupKey != "" {
+		e.mu.RLock()
+		alreadyNotified, err := db.GetNotificationsForItem(msg.ItemID, msg.Type, dedupKey)
+		e.mu.RUnlock()
+		if err == nil && len(alreadyNotified) > 0 {
+			log.Printf("notification engine: already notified %s for item %d, skipping", msg.Type, msg.ItemID)
+			return false
+		}
+	}
+
+	delivered := false
+	for _, n := range e.notifiers {
+		if !n.IsEnabled() {
+			continue
+		}
+		if err := n.Send(msg); err != nil {
+			log.Printf("notification engine: %s send failed for item %d: %v", n.Name(), msg.ItemID, err)
+			db.LogNotification(&db.NotificationLog{
+				ItemID:    &msg.ItemID,
+				Type:      msg.Type,
+				Channel:   n.Name(),
+				Subject:   msg.Subject,
+				Body:      msg.Body,
+				Delivered: 0,
+			})
+			continue
+		}
+		db.LogNotification(&db.NotificationLog{
+			ItemID:    &msg.ItemID,
+			Type:      msg.Type,
+			Channel:   n.Name(),
+			Subject:   msg.Subject,
+			Body:      msg.Body,
+			Delivered: 1,
+		})
+		delivered = true
+	}
+	return delivered
+}
+
+func (e *Engine) dedupKey(msg Message) string {
+	switch msg.Type {
+	case "price_drop":
+		return time.Now().Format("2006-01-02")
+	case "purchase_ready":
+		return msg.ScheduledDate
+	default:
+		return ""
+	}
+}
+
 func (e *Engine) SendTest(channel string) error {
 	e.mu.RLock()
 	defer e.mu.RUnlock()

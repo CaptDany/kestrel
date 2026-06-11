@@ -10,6 +10,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/CaptDany/kestrel/internal/handler"
 	"github.com/CaptDany/kestrel/internal/notifier"
+	"github.com/CaptDany/kestrel/internal/tracker"
 )
 
 type Server struct {
@@ -62,6 +63,12 @@ func New(addr string, tpl *template.Template, staticFS http.FileSystem) *Server 
 func (s *Server) SetNotifierEngine(e *notifier.Engine) {
 	if s.Handler != nil {
 		s.Handler.SetNotifierEngine(e)
+	}
+}
+
+func (s *Server) SetTracker(t *tracker.Tracker) {
+	if s.Handler != nil {
+		s.Handler.SetTracker(t)
 	}
 }
 

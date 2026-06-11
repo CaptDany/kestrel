@@ -64,6 +64,14 @@ type NotificationLog struct {
 	Delivered int    `json:"delivered"`
 }
 
+type PriceHistory struct {
+	ID        int64    `json:"id"`
+	ItemID    int64    `json:"item_id"`
+	Price     *float64 `json:"price"`
+	Currency  string   `json:"currency"`
+	ScrapedAt string   `json:"scraped_at"`
+}
+
 var defaultSettings = map[string]string{
 	"budget_mode":      "per_payday",
 	"budget_amount":    "0",
@@ -84,4 +92,8 @@ var defaultSettings = map[string]string{
 	"notify_push_enabled":  "false",
 	"notify_quiet_start":   "22:00",
 	"notify_quiet_end":     "08:00",
+	"tracker_enabled":             "false",
+	"tracker_interval_seconds":    "3600",
+	"tracker_drop_threshold_pct":  "5",
+	"tracker_drop_threshold_abs":  "0",
 }

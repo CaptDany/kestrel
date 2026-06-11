@@ -378,6 +378,94 @@ func GetNotificationsForItem(itemID int64, ntype string, date string) ([]Notific
 	return entries, nil
 }
 
+// ─── Price History ───────────────────────────────────────────────────────────
+
+func RecordPriceHistory(entry *PriceHistory) (int64, error) {
+	res, err := DB.Exec(
+		"INSERT INTO price_history (item_id, price, currency) VALUES (?, ?, ?)",
+		entry.ItemID, entry.Price, entry.Currency,
+	)
+	if err != nil {
+		return 0, fmt.Errorf("record price: %w", err)
+	}
+	return res.LastInsertId()
+}
+
+func GetLowestPrice(itemID int64) (*float64, error) {
+	var price *float64
+	err := DB.QueryRow(
+		"SELECT MIN(price) FROM price_history WHERE item_id = ?",
+		itemID,
+	).Scan(&price)
+	if err != nil {
+		return nil, fmt.Errorf("query lowest price: %w", err)
+	}
+	return price, nil
+}
+
+func GetPriceHistory(itemID int64, limit int) ([]PriceHistory, error) {
+	rows, err := DB.Query(
+		"SELECT id, item_id, price, currency, scraped_at FROM price_history WHERE item_id = ? ORDER BY scraped_at DESC LIMIT ?",
+		itemID, limit,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("query price history: %w", err)
+	}
+	defer rows.Close()
+
+	var entries []PriceHistory
+	for rows.Next() {
+		var e PriceHistory
+		if err := rows.Scan(&e.ID, &e.ItemID, &e.Price, &e.Currency, &e.ScrapedAt); err != nil {
+			return nil, fmt.Errorf("scan price history: %w", err)
+		}
+		entries = append(entries, e)
+	}
+	return entries, nil
+}
+
+// GetTrackableItems returns items with confirmed prices, not purchased, that have URLs.
+func GetTrackableItems() ([]Item, error) {
+	return scanItems(
+		`SELECT id, url, title, price, currency, priority, category, notes, status, desired_date, created_at, updated_at, purchased_at, price_confirmed
+		 FROM items
+		 WHERE price_confirmed = 1 AND status != 'purchased' AND url != ''
+		 ORDER BY id ASC`,
+	)
+}
+
+// GetItemCountByStatus returns the count of items grouped by status.
+func GetItemCountByStatus() (map[string]int, error) {
+	rows, err := DB.Query("SELECT status, COUNT(*) FROM items GROUP BY status")
+	if err != nil {
+		return nil, fmt.Errorf("query item counts: %w", err)
+	}
+	defer rows.Close()
+
+	counts := make(map[string]int)
+	for rows.Next() {
+		var status string
+		var count int
+		if err := rows.Scan(&status, &count); err != nil {
+			return nil, fmt.Errorf("scan count: %w", err)
+		}
+		counts[status] = count
+	}
+	return counts, nil
+}
+
+// GetPriceDropCountToday returns the number of price_drop notifications sent today.
+func GetPriceDropCountToday() (int, error) {
+	var count int
+	err := DB.QueryRow(
+		"SELECT COUNT(*) FROM notification_log WHERE type = 'price_drop' AND date(sent_at) = date('now')",
+	).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("query price drop count: %w", err)
+	}
+	return count, nil
+}
+
 // GetPlanItemsReady returns plan entries where scheduled_date <= today and status = 'planned'.
 // Used by the notification engine to find items ready to be purchased.
 func GetPlanItemsReady() ([]PurchasePlan, error) {

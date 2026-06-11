@@ -16,6 +16,7 @@ import (
 	"github.com/CaptDany/kestrel/internal/db"
 	"github.com/CaptDany/kestrel/internal/notifier"
 	"github.com/CaptDany/kestrel/internal/server"
+	"github.com/CaptDany/kestrel/internal/tracker"
 )
 
 //go:embed ui/templates/*.html
@@ -70,13 +71,17 @@ func main() {
 		notifier.NewPushNotifier(),
 	})
 
+	priceTracker := tracker.New(notifEngine)
+
 	srv := server.New(cfg.Addr(), tpl, http.FS(staticSub))
 	srv.SetNotifierEngine(notifEngine)
+	srv.SetTracker(priceTracker)
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
 	go notifEngine.Start(ctx)
+	go priceTracker.Start(ctx)
 
 	log.Printf("kestrel starting on %s", cfg.Addr())
 	if err := srv.Start(); err != nil {
