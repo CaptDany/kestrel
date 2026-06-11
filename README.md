@@ -2,11 +2,11 @@
 
 A self-hosted purchase planner that calendarizes e-commerce purchases based on your paydays and budget.
 
-Paste a link from any supported store (Amazon, MercadoLibre, Aliexpress, IKEA, Walmart) and Kestrel automatically extracts the price and schedules the purchase on an upcoming payday.
+Paste a link from any supported store (Amazon, MercadoLibre, Aliexpress, IKEA, Walmart) and kestrel automatically extracts the price and schedules the purchase on an upcoming payday.
 
 ## Features
 
-- **Price Extraction**: Paste any product URL — Kestrel auto-detects title, price, and currency
+- **Price Extraction**: Paste any product URL — kestrel auto-detects title, price, and currency
 - **Payday Scheduling**: Configure your payday schedule (monthly, biweekly, weekly)
 - **Budget Modes**: Per-payday, flexible (base + bonuses), or total pool
 - **Smart Sorting**: Sort by price, priority, date added, or desired date
