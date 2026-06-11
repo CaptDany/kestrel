@@ -1,7 +1,7 @@
 kestrel
 kestrel.exe
-scraper
-scraper.exe
+/scraper
+/scraper.exe
 tmp/
 data/
 *.db
