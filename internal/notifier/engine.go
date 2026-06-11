@@ -185,7 +185,7 @@ func (e *Engine) buildMessageBody(msg Message) string {
 	if msg.ScheduledDate != "" {
 		body += fmt.Sprintf("Scheduled Date: %s\n", msg.ScheduledDate)
 	}
-	body += "\n---\nSent by Kestrel Purchase Planner"
+	body += "\n---\nSent by kestrel Purchase Planner"
 	return body
 }
 
@@ -270,8 +270,8 @@ func (e *Engine) SendTest(channel string) error {
 		}
 		if err := n.Send(Message{
 			Type:    "test",
-			Subject: "Kestrel: Test Notification",
-			Body:    "This is a test message from Kestrel. Your notification channel is working correctly.",
+			Subject: "kestrel: Test Notification",
+			Body:    "This is a test message from kestrel. Your notification channel is working correctly.",
 		}); err != nil {
 			return fmt.Errorf("%s: %w", n.Name(), err)
 		}

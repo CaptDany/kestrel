@@ -54,7 +54,7 @@ func (e *EmailNotifier) Send(msg Message) error {
 	subject := msg.Subject
 	body := msg.Body
 	if subject == "" {
-		subject = fmt.Sprintf("Kestrel: %s", msg.Type)
+		subject = fmt.Sprintf("kestrel: %s", msg.Type)
 	}
 	if body == "" {
 		body = e.buildBody(msg)
@@ -163,15 +163,15 @@ func (e *EmailNotifier) buildBody(msg Message) string {
 	if msg.ScheduledDate != "" {
 		b.WriteString(fmt.Sprintf("Scheduled: %s\n", msg.ScheduledDate))
 	}
-	b.WriteString(fmt.Sprintf("\n---\nSent by Kestrel Purchase Planner"))
+	b.WriteString(fmt.Sprintf("\n---\nSent by kestrel Purchase Planner"))
 	return b.String()
 }
 
 func (e *EmailNotifier) SendTest(to string) error {
 	msg := Message{
 		Type:    "test",
-		Subject: "Kestrel: Test Notification",
-		Body:    "This is a test notification from Kestrel. If you received this, your email configuration is working.",
+		Subject: "kestrel: Test Notification",
+		Body:    "This is a test notification from kestrel. If you received this, your email configuration is working.",
 	}
 	oldTo := e.to
 	e.to = to
