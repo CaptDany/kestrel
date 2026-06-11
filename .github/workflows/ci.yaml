@@ -78,6 +78,8 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
+          target: kestrel
+          provenance: false
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -100,7 +102,8 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: Dockerfile.scraper
+          target: scraper
+          provenance: false
           push: true
           tags: ${{ steps.scraper-meta.outputs.tags }}
           labels: ${{ steps.scraper-meta.outputs.labels }}

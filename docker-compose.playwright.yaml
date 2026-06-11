@@ -1,7 +1,9 @@
 version: "3.9"
 services:
   kestrel:
-    build: .
+    build:
+      context: .
+      target: kestrel
     ports:
       - "8000:8000"
     volumes:
@@ -18,7 +20,7 @@ services:
   scraper:
     build:
       context: .
-      dockerfile: Dockerfile.scraper
+      target: scraper
     ports:
       - "8001:8001"
     environment:
