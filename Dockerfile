@@ -5,6 +5,12 @@ COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 RUN CGO_ENABLED=1 go build -o kestrel -ldflags="-s -w" .
+
+FROM golang:1.26-alpine AS scraper-builder
+WORKDIR /build
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
 RUN CGO_ENABLED=0 go build -o scraper -ldflags="-s -w" ./cmd/scraper/
 
 FROM alpine:3.21 AS kestrel
@@ -23,7 +29,7 @@ RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/
 RUN adduser --uid 568 --disabled-password --gecos "" kestrel
 USER kestrel
 WORKDIR /home/kestrel
-COPY --from=builder /build/scraper .
+COPY --from=scraper-builder /build/scraper .
 EXPOSE 8001
 ENV PORT=8001
 CMD ["./scraper"]
