@@ -5,6 +5,10 @@ variable "SCRAPER_TAGS" {
   default = "ghcr.io/captdany/kestrel-scraper:latest"
 }
 
+group "default" {
+  targets = ["kestrel", "scraper"]
+}
+
 target "_common" {
   context = "."
   dockerfile = "Dockerfile"
