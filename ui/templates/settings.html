@@ -348,6 +348,68 @@
 </div>
 {{end}}
 </div>
+<div class="glass-card rounded-2xl p-lg" id="background-settings">
+<h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2 mb-lg">
+<span class="material-symbols-outlined text-sky-400">wallpaper</span> Background
+</h3>
+<form x-data="bgForm()" @submit.prevent="save" class="flex flex-col gap-md">
+<div class="flex flex-col gap-3">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Mode</label>
+<div class="flex flex-wrap gap-2">
+<template x-for="m in ['solid', 'gradient', 'image']" :key="m">
+<button type="button" class="px-4 py-2 rounded-full border transition-all font-label-md text-label-md capitalize"
+:class="mode === m ? 'bg-white text-black border-white' : 'border-outline-variant/30 text-on-surface hover:border-primary'"
+x-text="m"
+@click="mode = m"></button>
+</template>
+</div>
+</div>
+<template x-if="mode === 'solid'">
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Color</label>
+<div class="flex items-center gap-3">
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-xl px-4 py-3 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_1px_#375BD2] flex items-center gap-3">
+<input class="bg-transparent border-none focus:ring-0 text-on-surface font-body-lg text-body-lg" type="color" x-model="value" style="width:40px;height:40px;padding:2px;cursor:pointer;border-radius:8px;"/>
+<span class="font-body-md text-body-md text-on-surface-variant font-mono" x-text="value"></span>
+</div>
+</div>
+</div>
+</template>
+<template x-if="mode === 'gradient'">
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">CSS Gradient</label>
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-xl px-4 py-3 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_1px_#375BD2]">
+<input class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-body-md text-body-md font-mono" type="text" x-model="value" placeholder="linear-gradient(135deg, #0A0B0D, #1a1a2e)"/>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant/60 mt-1">Use any valid CSS <code class="text-primary">background</code> value.</p>
+</div>
+</template>
+<template x-if="mode === 'image'">
+<div class="flex flex-col gap-3">
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Image URL</label>
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-xl px-4 py-3 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_1px_#375BD2]">
+<input class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-body-md text-body-md" type="url" x-model="value" placeholder="https://images.unsplash.com/photo-..."/>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Overlay Opacity: <span class="text-primary font-semibold" x-text="overlay"></span></label>
+<input type="range" min="0" max="1" step="0.05" x-model="overlay" class="w-full h-2 rounded-full appearance-none bg-surface-container-highest cursor-pointer accent-primary"/>
+<div class="flex justify-between text-[10px] text-on-surface-variant/40">
+<span>Transparent</span>
+<span>Opaque</span>
+</div>
+</div>
+</div>
+</template>
+<div class="flex justify-between items-center pt-md border-t border-outline-variant/10">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg ring-1 ring-white/10" :style="'background: ' + (mode === 'solid' ? value : mode === 'gradient' ? value : 'url(' + value + ') center/cover')"></div>
+<span class="font-label-sm text-label-sm text-on-surface-variant/60">Preview</span>
+</div>
+<button class="bg-primary text-on-primary px-6 py-2 rounded-xl font-label-md text-label-md hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-primary/20" type="submit">Save Background</button>
+</div>
+</form>
 </div>
 </div>
 </section>
@@ -457,6 +519,22 @@ function budgetEntryForm() {
 }
 function deleteBudgetEntry(id) {
     if(confirm('Delete this entry?')) fetch('/api/budget-entries/'+id, {method:'DELETE'}).then(r => { if(r.ok) location.reload(); });
+}
+function bgForm() {
+    return {
+        mode: '{{index .Settings "background_mode"}}',
+        value: '{{index .Settings "background_value"}}',
+        overlay: '{{index .Settings "background_overlay"}}',
+        save() {
+            fetch('/api/settings', { method:'PUT', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({
+                    background_mode: this.mode,
+                    background_value: this.value,
+                    background_overlay: this.overlay,
+                })
+            }).then(r => { if(r.ok) { location.reload(); } });
+        }
+    };
 }
 </script>
 {{template "footer" .}}
