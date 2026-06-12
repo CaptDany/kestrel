@@ -23,7 +23,7 @@ import (
 //go:embed ui/templates/*.html
 var templateFS embed.FS
 
-//go:embed ui/static/*
+//go:embed ui/static
 var staticFS embed.FS
 
 func main() {
