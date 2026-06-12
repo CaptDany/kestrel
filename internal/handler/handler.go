@@ -129,22 +129,26 @@ func (h *Handler) Dashboard(w http.ResponseWriter, r *http.Request) {
 
 	monthlyTrend, _ := db.GetMonthlyTrend()
 	savingProgress, _ := db.GetSavingProgress()
+	totalActual, _ := db.GetTotalActualSpend()
+	totalPlannedFromHistory, _ := db.GetTotalPlannedSpend()
 
 	h.render(w, "dashboard.html", pageData{
 		Title: "Dashboard",
 		Data: map[string]interface{}{
-			"pendingCount":      pendingCount,
-			"purchasedCount":    purchasedCount,
-			"savingCount":       savingCount,
-			"priceDropCount":    priceDropCount,
-			"nextPurchase":      nextPurchase,
-			"totalPlanned":      totalPlanned,
-			"plan":              plan,
-			"settings":          settings,
-			"categoryBreakdown": categoryBreakdown,
-			"conicGradient":     conicGradient,
-			"monthlyTrend":      monthlyTrend,
-			"savingProgress":    savingProgress,
+			"pendingCount":             pendingCount,
+			"purchasedCount":           purchasedCount,
+			"savingCount":              savingCount,
+			"priceDropCount":           priceDropCount,
+			"nextPurchase":             nextPurchase,
+			"totalPlanned":             totalPlanned,
+			"totalActual":              totalActual,
+			"totalPlannedFromHistory":  totalPlannedFromHistory,
+			"plan":                     plan,
+			"settings":                 settings,
+			"categoryBreakdown":        categoryBreakdown,
+			"conicGradient":            conicGradient,
+			"monthlyTrend":             monthlyTrend,
+			"savingProgress":           savingProgress,
 		},
 	})
 }
@@ -241,7 +245,16 @@ func (h *Handler) PurchaseItem(w http.ResponseWriter, r *http.Request) {
 		jsonErr(w, 400, "invalid id")
 		return
 	}
-	if err := db.MarkItemPurchased(id); err != nil {
+	var req struct {
+		ActualPrice *float64 `json:"actual_price"`
+		Notes       string   `json:"notes"`
+	}
+	_ = json.NewDecoder(r.Body).Decode(&req)
+	actualPrice := 0.0
+	if req.ActualPrice != nil {
+		actualPrice = *req.ActualPrice
+	}
+	if err := db.RecordPurchase(id, actualPrice, req.Notes); err != nil {
 		jsonErr(w, 500, err.Error())
 		return
 	}
@@ -311,6 +324,27 @@ func (h *Handler) SchedulePage(w http.ResponseWriter, r *http.Request) {
 			"items":    items,
 			"paydays":  paydays,
 			"settings": settings,
+		},
+	})
+}
+
+// ─── History Page ───────────────────────────────────────────────────────────
+
+func (h *Handler) HistoryPage(w http.ResponseWriter, r *http.Request) {
+	history, _ := db.GetPurchaseHistory()
+	totalActual, _ := db.GetTotalActualSpend()
+	totalPlanned, _ := db.GetTotalPlannedSpend()
+
+	variance := totalActual - totalPlanned
+
+	h.render(w, "history.html", pageData{
+		Title: "Purchase History",
+		Data: map[string]interface{}{
+			"history":       history,
+			"totalActual":   totalActual,
+			"totalPlanned":  totalPlanned,
+			"variance":      variance,
+			"purchaseCount": len(history),
 		},
 	})
 }

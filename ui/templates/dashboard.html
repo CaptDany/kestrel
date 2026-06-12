@@ -52,6 +52,50 @@
 <h4 class="font-headline-md text-headline-md text-white">{{$data.priceDropCount}} Alerts</h4>
 </div>
 </section>
+<section class="grid grid-cols-1 md:grid-cols-3 gap-md mb-xl">
+<div class="glass-card p-lg rounded-xl col-span-3 md:col-span-3">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">compare_arrows</span> Actual vs. Planned Spend
+</h3>
+{{if gt $data.totalActual 0.0}}
+<div class="flex flex-col md:flex-row gap-6">
+<div class="flex-1">
+<div class="flex justify-between items-center mb-1">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest">Actual Spent</span>
+<span class="font-headline-md text-headline-md text-white">{{printf "$%.2f" $data.totalActual}}</span>
+</div>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-center mb-1">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest">Planned (History)</span>
+<span class="font-headline-md text-headline-md text-white">{{printf "$%.2f" $data.totalPlannedFromHistory}}</span>
+</div>
+</div>
+<div class="flex-1">
+{{$variance := sub $data.totalActual $data.totalPlannedFromHistory}}
+<div class="flex justify-between items-center mb-1">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest">Variance</span>
+<span class="font-headline-md text-headline-md {{if lt $variance 0.0}}text-emerald-400{{else if gt $variance 0.0}}text-rose-400{{else}}text-white{{end}}">{{printf "$%+.2f" $variance}}</span>
+</div>
+{{if lt $variance 0.0}}
+<div class="bg-emerald-500/10 text-emerald-400 text-label-sm px-3 py-1.5 rounded-lg mt-2 hidden md:block">You're spending less than planned! Saving {{printf "$%.2f" (sub 0.0 $variance)}}.</div>
+{{else if gt $variance 0.0}}
+<div class="bg-rose-500/10 text-rose-400 text-label-sm px-3 py-1.5 rounded-lg mt-2 hidden md:block">You're {{printf "$%.2f" $variance}} over planned spend. Review your budget.</div>
+{{else}}
+<div class="text-on-surface-variant text-label-sm px-3 py-1.5 rounded-lg mt-2 hidden md:block">Actual spend matches plan exactly.</div>
+{{end}}
+</div>
+</div>
+{{else}}
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-surface-container flex items-center justify-center rounded-full">
+<span class="material-symbols-outlined text-on-surface-variant">receipt_long</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">Start marking items as purchased to see how your actual spend compares.</p>
+</div>
+{{end}}
+</div>
+</section>
 <section class="grid grid-cols-1 lg:grid-cols-12 gap-xl items-start mb-xl">
 <div class="lg:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-md">
 <div class="glass-card p-lg rounded-xl">

@@ -59,12 +59,31 @@ func DeleteItem(id int64) error {
 	return err
 }
 
-func MarkItemPurchased(id int64) error {
+func RecordPurchase(id int64, actualPrice float64, notes string) error {
+	plannedPrice, _ := getItemPrice(id)
 	_, err := DB.Exec(
+		`INSERT INTO purchase_history (item_id, planned_price, actual_price, purchased_at, notes)
+		 VALUES (?, ?, ?, datetime('now'), ?)`,
+		id, plannedPrice, actualPrice, notes,
+	)
+	if err != nil {
+		return fmt.Errorf("record purchase: %w", err)
+	}
+	_, err = DB.Exec(
 		"UPDATE items SET status='purchased', purchased_at=datetime('now'), updated_at=datetime('now') WHERE id=?",
 		id,
 	)
-	return err
+	if err != nil {
+		return fmt.Errorf("mark purchased: %w", err)
+	}
+	_, _ = DB.Exec("UPDATE purchase_plan SET status='completed' WHERE item_id=? AND status IN ('planned','')", id)
+	return nil
+}
+
+func getItemPrice(id int64) (*float64, error) {
+	var price *float64
+	err := DB.QueryRow("SELECT price FROM items WHERE id=?", id).Scan(&price)
+	return price, err
 }
 
 func GetPendingAndSavingItems() ([]Item, error) {
@@ -294,8 +313,9 @@ func GetPlan() ([]PurchasePlan, error) {
 	for rows.Next() {
 		var p PurchasePlan
 		if err := rows.Scan(
-			&p.ID, &p.ItemID, &p.ScheduledDate, &p.BudgetCycle, &p.Rank,
-			&p.AmountAllocated, &p.Status,
+			&p.ID, &p.ItemID, &p.ScheduledDate, &p.PaydayID, &p.BudgetCycle,
+			&p.Rank, &p.AmountAllocated, &p.Status, &p.CreatedAt, &p.Notes,
+			&p.ItemTitle, &p.ItemPrice, &p.ItemURL,
 		); err != nil {
 			return nil, fmt.Errorf("scan plan: %w", err)
 		}
@@ -526,7 +546,7 @@ func GetCategoryBreakdown() ([]CategoryBreakdown, error) {
 }
 
 func GetMonthlyTrend() ([]MonthlyTrend, error) {
-	rows, err := DB.Query(`
+	plannedRows, err := DB.Query(`
 		SELECT strftime('%Y-%m', scheduled_date) AS month,
 		       SUM(COALESCE(amount_allocated, 0)) AS planned
 		FROM purchase_plan
@@ -535,32 +555,73 @@ func GetMonthlyTrend() ([]MonthlyTrend, error) {
 		ORDER BY month ASC`,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("query monthly trend: %w", err)
+		return nil, fmt.Errorf("query planned trend: %w", err)
 	}
-	defer func() { _ = rows.Close() }()
+	defer func() { _ = plannedRows.Close() }()
 
-	var result []MonthlyTrend
-	for rows.Next() {
+	trendMap := make(map[string]*MonthlyTrend)
+	var orderedMonths []string
+
+	for plannedRows.Next() {
 		var t MonthlyTrend
-		if err := rows.Scan(&t.Month, &t.Planned); err != nil {
-			return nil, fmt.Errorf("scan trend: %w", err)
+		if err := plannedRows.Scan(&t.Month, &t.Planned); err != nil {
+			return nil, fmt.Errorf("scan planned trend: %w", err)
 		}
 		if len(t.Month) >= 7 {
 			t.Label = monthAbbrev(t.Month[5:7]) + " " + t.Month[:4]
 		} else {
 			t.Label = t.Month
 		}
-		result = append(result, t)
+		trendMap[t.Month] = &t
+		orderedMonths = append(orderedMonths, t.Month)
 	}
-	maxPlanned := 0.0
-	for _, t := range result {
-		if t.Planned > maxPlanned {
-			maxPlanned = t.Planned
+
+	actualRows, err := DB.Query(`
+		SELECT strftime('%Y-%m', purchased_at) AS month,
+		       SUM(COALESCE(actual_price, 0)) AS actual
+		FROM purchase_history
+		GROUP BY strftime('%Y-%m', purchased_at)
+		ORDER BY month ASC`,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("query actual trend: %w", err)
+	}
+	defer func() { _ = actualRows.Close() }()
+
+	for actualRows.Next() {
+		var month string
+		var actual float64
+		if err := actualRows.Scan(&month, &actual); err != nil {
+			return nil, fmt.Errorf("scan actual trend: %w", err)
+		}
+		if t, ok := trendMap[month]; ok {
+			t.Actual = actual
+		} else {
+			label := month
+			if len(month) >= 7 {
+				label = monthAbbrev(month[5:7]) + " " + month[:4]
+			}
+			trendMap[month] = &MonthlyTrend{Month: month, Label: label, Actual: actual}
+			orderedMonths = append(orderedMonths, month)
+		}
+	}
+
+	result := make([]MonthlyTrend, 0, len(orderedMonths))
+	maxVal := 0.0
+	for _, m := range orderedMonths {
+		if t := trendMap[m]; t != nil {
+			result = append(result, *t)
+			if t.Planned > maxVal {
+				maxVal = t.Planned
+			}
+			if t.Actual > maxVal {
+				maxVal = t.Actual
+			}
 		}
 	}
 	for i := range result {
-		if maxPlanned > 0 {
-			result[i].PctOfMax = (result[i].Planned / maxPlanned) * 100
+		if maxVal > 0 {
+			result[i].PctOfMax = (result[i].Planned / maxVal) * 100
 		}
 	}
 	return result, nil
@@ -594,6 +655,61 @@ func GetSavingProgress() ([]SavingProgress, error) {
 		result = append(result, s)
 	}
 	return result, nil
+}
+
+// ─── Purchase History ──────────────────────────────────────────────────────────
+
+func GetPurchaseHistory() ([]PurchaseHistory, error) {
+	rows, err := DB.Query(`
+		SELECT ph.id, ph.item_id, i.title, i.url,
+		       ph.planned_price, ph.actual_price, ph.currency,
+		       ph.purchased_at, ph.notes, ph.created_at
+		FROM purchase_history ph
+		JOIN items i ON i.id = ph.item_id
+		ORDER BY ph.purchased_at DESC`,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("query purchase history: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var result []PurchaseHistory
+	for rows.Next() {
+		var h PurchaseHistory
+		if err := rows.Scan(
+			&h.ID, &h.ItemID, &h.ItemTitle, &h.ItemURL,
+			&h.PlannedPrice, &h.ActualPrice, &h.Currency,
+			&h.PurchasedAt, &h.Notes, &h.CreatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("scan purchase history: %w", err)
+		}
+		result = append(result, h)
+	}
+	return result, nil
+}
+
+func GetTotalActualSpend() (float64, error) {
+	var total *float64
+	err := DB.QueryRow("SELECT SUM(actual_price) FROM purchase_history").Scan(&total)
+	if err != nil {
+		return 0, err
+	}
+	if total == nil {
+		return 0, nil
+	}
+	return *total, nil
+}
+
+func GetTotalPlannedSpend() (float64, error) {
+	var total *float64
+	err := DB.QueryRow("SELECT SUM(COALESCE(planned_price, actual_price)) FROM purchase_history").Scan(&total)
+	if err != nil {
+		return 0, err
+	}
+	if total == nil {
+		return 0, nil
+	}
+	return *total, nil
 }
 
 func monthAbbrev(mm string) string {

@@ -72,6 +72,19 @@ type PriceHistory struct {
 	ScrapedAt string   `json:"scraped_at"`
 }
 
+type PurchaseHistory struct {
+	ID           int64    `json:"id"`
+	ItemID       int64    `json:"item_id"`
+	ItemTitle    string   `json:"item_title"`
+	ItemURL      string   `json:"item_url"`
+	PlannedPrice *float64 `json:"planned_price"`
+	ActualPrice  float64  `json:"actual_price"`
+	Currency     string   `json:"currency"`
+	PurchasedAt  string   `json:"purchased_at"`
+	Notes        string   `json:"notes"`
+	CreatedAt    string   `json:"created_at"`
+}
+
 type CategoryBreakdown struct {
 	Category string  `json:"category"`
 	Total    float64 `json:"total"`
