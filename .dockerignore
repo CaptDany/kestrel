@@ -1,0 +1,14 @@
+.git
+.gitignore
+.github
+.vscode
+*.md
+LICENSE
+Dockerfile
+docker-bake.hcl
+docker-compose.yaml
+docker-compose.playwright.yaml
+truenas
+docs
+plans
+testdata

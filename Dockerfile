@@ -1,17 +1,32 @@
+# syntax=docker/dockerfile:1.7
+
+# To pin base images for reproducible builds, replace tags with digests:
+#   docker pull golang:1.26-alpine
+#   docker image inspect --format '{{index .RepoDigests 0}}' golang:1.26-alpine
+# Then use: FROM golang:1.26-alpine@sha256:<digest> AS builder
+
 FROM golang:1.26-alpine AS builder
 WORKDIR /build
 RUN apk add --no-cache gcc musl-dev sqlite-dev
 COPY go.mod go.sum ./
-RUN go mod download
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    go mod download
 COPY . .
-RUN CGO_ENABLED=1 go build -o kestrel -ldflags="-s -w" .
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=1 go build -o kestrel -ldflags="-s -w" .
 
 FROM golang:1.26-alpine AS scraper-builder
 WORKDIR /build
 COPY go.mod go.sum ./
-RUN go mod download
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    go mod download
 COPY . .
-RUN CGO_ENABLED=0 go build -o scraper -ldflags="-s -w" ./cmd/scraper/
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 go build -o scraper -ldflags="-s -w" ./cmd/scraper/
 
 FROM alpine:3.21 AS kestrel
 RUN apk add --no-cache ca-certificates tzdata
