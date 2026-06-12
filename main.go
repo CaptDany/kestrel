@@ -57,6 +57,9 @@ func main() {
 			}
 			return *i
 		},
+		"sub": func(a, b float64) float64 {
+			return a - b
+		},
 	}
 
 	tpl := template.Must(template.New("").Funcs(funcs).ParseFS(templateFS, "ui/templates/*.html"))

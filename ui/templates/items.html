@@ -1,5 +1,6 @@
 {{template "header" .}}
 {{$items := .Data}}
+<div x-data="purchaseModal">
 <div class="flex flex-col md:flex-row md:items-center justify-between gap-lg mb-xl">
 <div>
 <h2 class="font-headline-lg text-headline-lg font-bold text-on-surface">Planned Items</h2>
@@ -69,7 +70,7 @@
 {{end}}
 </div>
 {{if ne .Status "purchased"}}
-<button class="bg-primary-container text-on-primary-container px-md py-2 rounded-lg font-bold font-label-md text-label-md hover:brightness-110 active:scale-95 transition-all" hx-post="/api/items/{{.ID}}/purchase" hx-target="#item-{{.ID}}" hx-swap="outerHTML" hx-ext="json-enc">Mark Purchased</button>
+<button class="bg-primary-container text-on-primary-container px-md py-2 rounded-lg font-bold font-label-md text-label-md hover:brightness-110 active:scale-95 transition-all" @click="openPurchase({{.ID}}, {{if .Price}}{{.Price}}{{else}}null{{end}}, '{{.Title}}')">Mark Purchased</button>
 {{end}}
 </div>
 </div>
@@ -85,6 +86,34 @@
 <a href="/items/new" class="bg-primary text-on-primary px-xl py-md rounded-xl font-bold hover:brightness-110 active:scale-95 transition-all">Add your first item</a>
 </div>
 {{end}}
+<div x-show="showPurchaseModal" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center p-md" style="background:rgba(0,0,0,0.6)" @click.self="showPurchaseModal = false">
+<div class="glass-card rounded-2xl p-lg w-full max-w-md" @click.stop>
+<div class="flex items-center justify-between mb-lg">
+<h3 class="font-headline-md text-headline-md text-on-surface">Mark as Purchased</h3>
+<button class="text-on-surface-variant hover:text-on-surface transition-colors" @click="showPurchaseModal = false"><span class="material-symbols-outlined">close</span></button>
+</div>
+<p class="font-body-lg text-body-lg text-on-surface mb-lg truncate" x-text="purchaseItemTitle"></p>
+<div class="flex flex-col gap-md">
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Actual Price</label>
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-xl px-4 py-3 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_1px_#375BD2] flex items-center gap-2">
+<span class="font-body-lg text-body-lg text-on-surface-variant">$</span>
+<input class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-body-lg text-body-lg" type="number" step="0.01" x-model="purchasePrice" placeholder="0.00"/>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Notes (optional)</label>
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-xl px-4 py-3 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_1px_#375BD2]">
+<input class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-body-md text-body-md" type="text" x-model="purchaseNotes" placeholder="Where did you buy it? Any discounts?"/>
+</div>
+</div>
+</div>
+<div class="flex justify-end gap-3 mt-lg pt-md border-t border-outline-variant/10">
+<button class="border border-outline-variant/30 text-on-surface px-5 py-2 rounded-xl font-label-sm text-label-sm hover:bg-surface-container-high transition-colors" @click="showPurchaseModal = false">Cancel</button>
+<button class="bg-primary text-on-primary px-6 py-2 rounded-xl font-label-md text-label-md hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-primary/20" @click="confirmPurchase">Confirm Purchase</button>
+</div>
+</div>
+</div>
 <script>
 (function() {
   var params = new URLSearchParams(window.location.search);
@@ -108,10 +137,37 @@
     el.innerHTML = html + el.innerHTML;
   });
 })();
-document.body.addEventListener('htmx:afterSettle', function(evt) {
-  if (evt.detail.elt && evt.detail.elt.hasAttribute('hx-post') && evt.detail.elt.getAttribute('hx-post').includes('/purchase')) {
-    location.reload();
-  }
+document.addEventListener('alpine:init', function() {
+  Alpine.data('purchaseModal', function() {
+    return {
+      showPurchaseModal: false,
+      purchaseItemId: 0,
+      purchaseItemTitle: '',
+      purchasePrice: '',
+      purchaseNotes: '',
+      openPurchase: function(id, price, title) {
+        this.purchaseItemId = id;
+        this.purchaseItemTitle = title;
+        this.purchasePrice = price || '';
+        this.purchaseNotes = '';
+        this.showPurchaseModal = true;
+      },
+      confirmPurchase: function() {
+        fetch('/api/items/' + this.purchaseItemId + '/purchase', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            actual_price: this.purchasePrice ? parseFloat(this.purchasePrice) : null,
+            notes: this.purchaseNotes
+          })
+        }).then(function(r) {
+          if (r.ok) { location.reload(); }
+        });
+        this.showPurchaseModal = false;
+      }
+    };
+  });
 });
 </script>
+</div>
 {{template "footer" .}}

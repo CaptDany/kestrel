@@ -49,6 +49,7 @@ func New(addr string, tpl *template.Template, staticFS http.FileSystem) *Server 
 	s.Router.Get("/items/new", s.Handler.ItemNew)
 	s.Router.Get("/items/{id}/edit", s.Handler.ItemEdit)
 	s.Router.Get("/schedule", s.Handler.SchedulePage)
+	s.Router.Get("/history", s.Handler.HistoryPage)
 	s.Router.Get("/settings", s.Handler.SettingsPage)
 
 	s.Router.Post("/api/items", s.Handler.CreateItem)
