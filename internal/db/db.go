@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"strings"
 
 	_ "modernc.org/sqlite"
 )
@@ -135,8 +136,8 @@ func migrate() error {
 		`ALTER TABLE items ADD COLUMN image_url TEXT NOT NULL DEFAULT ''`,
 	}
 	for _, m := range migrations {
-		if _, err := DB.Exec(m); err != nil {
-			// column may already exist on fresh installs, ignore
+		if _, err := DB.Exec(m); err != nil && !strings.Contains(err.Error(), "duplicate column") {
+			return fmt.Errorf("migrate: %w", err)
 		}
 	}
 
