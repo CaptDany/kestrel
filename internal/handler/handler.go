@@ -2,11 +2,13 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/CaptDany/kestrel/internal/db"
@@ -100,17 +102,49 @@ func (h *Handler) Dashboard(w http.ResponseWriter, r *http.Request) {
 
 	priceDropCount, _ := db.GetPriceDropCountToday()
 
+	categoryBreakdown, _ := db.GetCategoryBreakdown()
+	categoryColors := []string{"#375BD2", "#FFB690", "#A84800", "#B7C4FF", "#6B7280", "#F59E0B"}
+	grandTotal := 0.0
+	for i := range categoryBreakdown {
+		categoryBreakdown[i].Color = categoryColors[i%len(categoryColors)]
+		grandTotal += categoryBreakdown[i].Total
+	}
+	conicGradient := ""
+	if grandTotal > 0 {
+		var parts []string
+		cumDeg := 0.0
+		for _, c := range categoryBreakdown {
+			if c.Total <= 0 {
+				continue
+			}
+			angle := (c.Total / grandTotal) * 360
+			startDeg := cumDeg
+			cumDeg += angle
+			parts = append(parts, fmt.Sprintf("%s %.1fdeg %.1fdeg", c.Color, startDeg, cumDeg))
+		}
+		if len(parts) > 0 {
+			conicGradient = "conic-gradient(" + strings.Join(parts, ", ") + ")"
+		}
+	}
+
+	monthlyTrend, _ := db.GetMonthlyTrend()
+	savingProgress, _ := db.GetSavingProgress()
+
 	h.render(w, "dashboard.html", pageData{
 		Title: "Dashboard",
 		Data: map[string]interface{}{
-			"pendingCount":   pendingCount,
-			"purchasedCount": purchasedCount,
-			"savingCount":    savingCount,
-			"priceDropCount": priceDropCount,
-			"nextPurchase":   nextPurchase,
-			"totalPlanned":   totalPlanned,
-			"plan":           plan,
-			"settings":       settings,
+			"pendingCount":      pendingCount,
+			"purchasedCount":    purchasedCount,
+			"savingCount":       savingCount,
+			"priceDropCount":    priceDropCount,
+			"nextPurchase":      nextPurchase,
+			"totalPlanned":      totalPlanned,
+			"plan":              plan,
+			"settings":          settings,
+			"categoryBreakdown": categoryBreakdown,
+			"conicGradient":     conicGradient,
+			"monthlyTrend":      monthlyTrend,
+			"savingProgress":    savingProgress,
 		},
 	})
 }

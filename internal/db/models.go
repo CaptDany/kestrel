@@ -72,6 +72,29 @@ type PriceHistory struct {
 	ScrapedAt string   `json:"scraped_at"`
 }
 
+type CategoryBreakdown struct {
+	Category string  `json:"category"`
+	Total    float64 `json:"total"`
+	Count    int     `json:"count"`
+	Color    string  `json:"color"`
+}
+
+type MonthlyTrend struct {
+	Month   string  `json:"month"`
+	Label   string  `json:"label"`
+	Planned float64 `json:"planned"`
+	Actual  float64 `json:"actual"`
+	PctOfMax float64 `json:"pct_of_max"`
+}
+
+type SavingProgress struct {
+	ItemID      int64   `json:"item_id"`
+	ItemTitle   string  `json:"item_title"`
+	TargetPrice float64 `json:"target_price"`
+	Accumulated float64 `json:"accumulated"`
+	Percent     float64 `json:"percent"`
+}
+
 var defaultSettings = map[string]string{
 	"budget_mode":      "per_payday",
 	"budget_amount":    "0",

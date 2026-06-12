@@ -496,3 +496,132 @@ func GetPlanItemsReady() ([]PurchasePlan, error) {
 	}
 	return plan, nil
 }
+
+// ─── Analytics ──────────────────────────────────────────────────────────────
+
+func GetCategoryBreakdown() ([]CategoryBreakdown, error) {
+	rows, err := DB.Query(`
+		SELECT COALESCE(NULLIF(category, ''), 'Uncategorized') AS category,
+		       COALESCE(SUM(price), 0) AS total,
+		       COUNT(*) AS count
+		FROM items
+		WHERE status != 'purchased'
+		GROUP BY category
+		ORDER BY total DESC`,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("query category breakdown: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var result []CategoryBreakdown
+	for rows.Next() {
+		var c CategoryBreakdown
+		if err := rows.Scan(&c.Category, &c.Total, &c.Count); err != nil {
+			return nil, fmt.Errorf("scan category: %w", err)
+		}
+		result = append(result, c)
+	}
+	return result, nil
+}
+
+func GetMonthlyTrend() ([]MonthlyTrend, error) {
+	rows, err := DB.Query(`
+		SELECT strftime('%Y-%m', scheduled_date) AS month,
+		       SUM(COALESCE(amount_allocated, 0)) AS planned
+		FROM purchase_plan
+		WHERE status IN ('planned', '')
+		GROUP BY strftime('%Y-%m', scheduled_date)
+		ORDER BY month ASC`,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("query monthly trend: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var result []MonthlyTrend
+	for rows.Next() {
+		var t MonthlyTrend
+		if err := rows.Scan(&t.Month, &t.Planned); err != nil {
+			return nil, fmt.Errorf("scan trend: %w", err)
+		}
+		if len(t.Month) >= 7 {
+			t.Label = monthAbbrev(t.Month[5:7]) + " " + t.Month[:4]
+		} else {
+			t.Label = t.Month
+		}
+		result = append(result, t)
+	}
+	maxPlanned := 0.0
+	for _, t := range result {
+		if t.Planned > maxPlanned {
+			maxPlanned = t.Planned
+		}
+	}
+	for i := range result {
+		if maxPlanned > 0 {
+			result[i].PctOfMax = (result[i].Planned / maxPlanned) * 100
+		}
+	}
+	return result, nil
+}
+
+func GetSavingProgress() ([]SavingProgress, error) {
+	rows, err := DB.Query(`
+		SELECT is.item_id,
+		       i.title AS item_title,
+		       COALESCE(i.price, 0) AS target_price,
+		       is.accumulated
+		FROM item_savings is
+		JOIN items i ON i.id = is.item_id
+		WHERE i.status = 'saving'
+		ORDER BY (is.accumulated / NULLIF(i.price, 0)) ASC`,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("query saving progress: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var result []SavingProgress
+	for rows.Next() {
+		var s SavingProgress
+		if err := rows.Scan(&s.ItemID, &s.ItemTitle, &s.TargetPrice, &s.Accumulated); err != nil {
+			return nil, fmt.Errorf("scan saving: %w", err)
+		}
+		if s.TargetPrice > 0 {
+			s.Percent = (s.Accumulated / s.TargetPrice) * 100
+		}
+		result = append(result, s)
+	}
+	return result, nil
+}
+
+func monthAbbrev(mm string) string {
+	switch mm {
+	case "01":
+		return "Jan"
+	case "02":
+		return "Feb"
+	case "03":
+		return "Mar"
+	case "04":
+		return "Apr"
+	case "05":
+		return "May"
+	case "06":
+		return "Jun"
+	case "07":
+		return "Jul"
+	case "08":
+		return "Aug"
+	case "09":
+		return "Sep"
+	case "10":
+		return "Oct"
+	case "11":
+		return "Nov"
+	case "12":
+		return "Dec"
+	}
+	return mm
+}
