@@ -225,7 +225,7 @@
 <div class="absolute -right-12 -top-12 w-48 h-48 bg-primary/10 rounded-full blur-3xl"></div>
 <div class="relative z-10">
 <h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest mb-4">Quick Add</h3>
-<form hx-post="/api/scrape" hx-ext="json-enc" hx-target="#scrape-result" hx-indicator="#scrape-spinner">
+<form id="quick-scrape-form" hx-post="/api/scrape" hx-ext="json-enc" hx-swap="none" hx-indicator="#scrape-spinner">
 <div class="flex gap-2">
 <div class="flex-1 flex items-center gap-3 bg-surface-container-low border border-outline-variant/30 rounded-xl px-4 py-3 transition-all">
 <span class="material-symbols-outlined text-on-surface-variant">search</span>
@@ -237,8 +237,37 @@
 </div>
 </form>
 <div id="scrape-spinner" class="htmx-indicator mt-2"><div class="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div></div>
-<div id="scrape-result" class="mt-2"></div>
 </div>
+</div>
+<div x-data="scrapeModal">
+  <div x-show="show" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center p-md" style="background:rgba(0,0,0,0.6)" @click.self="show = false">
+    <div class="glass-card rounded-2xl p-lg w-full max-w-md" @click.stop>
+      <div class="flex items-center justify-between mb-lg">
+        <h3 class="font-headline-md text-headline-md text-on-surface">Add Item</h3>
+        <button class="text-on-surface-variant hover:text-on-surface transition-colors" @click="show = false"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <div class="flex gap-3 mb-lg">
+        <img x-show="imageUrl" :src="imageUrl" alt="" class="w-20 h-20 rounded-lg object-cover bg-surface-container-high shrink-0" onerror="this.style.display='none'"/>
+        <div class="min-w-0 flex-1">
+          <p class="font-body-md text-body-md font-semibold text-white truncate" x-text="title"></p>
+          <p class="font-headline-md text-headline-md text-primary mt-1"><span x-text="price!==null?'$'+parseFloat(price).toFixed(2):'Could not detect price'"></span> <span class="font-label-sm text-label-sm text-on-surface-variant" x-text="currency"></span></p>
+        </div>
+      </div>
+      <div class="flex flex-col gap-md">
+        <div class="flex flex-col gap-2">
+          <label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Price</label>
+          <div class="bg-surface-container-low border border-outline-variant/30 rounded-xl px-4 py-3 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_1px_#375BD2] flex items-center gap-2">
+            <span class="font-body-lg text-body-lg text-on-surface-variant">$</span>
+            <input class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-body-lg text-body-lg" type="number" step="0.01" x-model="price" placeholder="0.00"/>
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-end gap-3 mt-lg pt-md border-t border-outline-variant/10">
+        <button class="border border-outline-variant/30 text-on-surface px-5 py-2 rounded-xl font-label-sm text-label-sm hover:bg-surface-container-high transition-colors" @click="show = false">Cancel</button>
+        <button class="bg-primary text-on-primary px-6 py-2 rounded-xl font-label-md text-label-md hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-primary/20" @click="confirm">Add to List</button>
+      </div>
+    </div>
+  </div>
 </div>
 <div class="bg-surface-container-low border border-outline-variant/20 rounded-xl p-md">
 <div class="flex items-center justify-between mb-4 px-1">
@@ -267,20 +296,52 @@
 </aside>
 </div>
 <script>
+document.addEventListener('alpine:init', function() {
+  Alpine.data('scrapeModal', function() {
+    return {
+      show: false,
+      url: '',
+      title: '',
+      price: null,
+      currency: 'USD',
+      imageUrl: '',
+      open: function(data) {
+        this.url = data.url;
+        this.title = data.title || 'Unknown';
+        this.price = data.price;
+        this.currency = data.currency || 'USD';
+        this.imageUrl = data.image_url || '';
+        this.show = true;
+      },
+      confirm: function() {
+        fetch('/api/items', { method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({
+            url: this.url, title: this.title, price: this.price,
+            currency: this.currency, price_confirmed: this.price !== null ? 1 : 0,
+            image_url: this.imageUrl
+          })
+        }).then(function(r) {
+          if (r.ok) { toast('Item added!'); setTimeout(function() { location.reload(); }, 1000); }
+          else { toast('Failed to add item', 'error'); }
+        });
+        this.show = false;
+      }
+    };
+  });
+});
 document.body.addEventListener('htmx:afterRequest', function(evt) {
-  if (evt.target.id === 'scrape-result' && evt.detail.successful) {
-    var data = JSON.parse(evt.detail.xhr.responseText);
-    document.getElementById('scrape-result').innerHTML =
-      '<div class="glass-card p-md rounded-xl mt-3"><div class="flex items-center gap-3 mb-3">' + (data.image_url ? '<div class="w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-surface-container-high"><img src="' + data.image_url.replace(/'/g, "\\'") + '" alt="" class="w-full h-full object-cover" onerror="this.style.display=\'none\'"/></div>' : '<div class="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-primary">check</span></div>') + '<div class="min-w-0"><p class="font-body-sm text-body-sm text-white font-semibold truncate">' + (data.title || 'Unknown') + '</p><p class="font-label-sm text-label-sm text-on-surface-variant">' + (data.price ? '$' + parseFloat(data.price).toFixed(2) + ' ' + data.currency : 'Could not detect price') + '</p></div></div><button class="w-full bg-primary-container text-on-primary-container py-2 rounded-lg font-label-md text-label-md hover:brightness-110 transition-all" onclick="addItemFromScrape(\'' + data.url.replace(/'/g, "\\'") + '\', \'' + (data.title||'').replace(/'/g, "\\'") + '\', ' + (data.price || 'null') + ', \'' + (data.currency || 'USD') + '\', \'' + (data.image_url || '').replace(/'/g, "\\'") + '\')">Add to List</button></div>';
+  if (evt.target.id === 'quick-scrape-form') {
+    if (evt.detail.successful) {
+      var data = JSON.parse(evt.detail.xhr.responseText);
+      Alpine.$data(document.querySelector('[x-data="scrapeModal"]')).open(data);
+    } else {
+      toast('Scrape failed - try a different URL', 'error');
+    }
   }
   if (evt.target.id === 'plan-msg' && evt.detail.successful) {
-    document.getElementById('plan-msg').innerHTML = '<div class="bg-primary/10 text-primary px-md py-2 rounded-lg text-sm mt-2 flex items-center gap-2"><span class="material-symbols-outlined text-sm">check_circle</span>Plan regenerated!</div>';
+    toast('Plan regenerated!');
     setTimeout(function() { location.reload(); }, 1000);
   }
 });
-function addItemFromScrape(url, title, price, currency, image_url) {
-  fetch('/api/items', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url:url, title:title, price:price, currency:currency, price_confirmed: price!==null?1:0, image_url: image_url||''}) })
-  .then(function(r) { if (r.ok) { document.getElementById('scrape-result').innerHTML = '<div class="bg-emerald-500/10 text-emerald-500 px-md py-2 rounded-lg text-sm mt-2 flex items-center gap-2"><span class="material-symbols-outlined text-sm">check_circle</span>Item added!</div>'; setTimeout(function() { location.reload(); }, 800); } });
-}
 </script>
 {{template "footer" .}}

@@ -122,7 +122,7 @@
 <script>
 document.body.addEventListener('htmx:afterRequest', function(evt) {
   if (evt.target.id === 'plan-msg' && evt.detail.successful) {
-    document.getElementById('plan-msg').innerHTML = '<div class="bg-primary/10 text-primary px-md py-2 rounded-lg text-sm flex items-center gap-2"><span class="material-symbols-outlined text-sm">check_circle</span>Plan regenerated!</div>';
+    toast('Plan regenerated!');
     setTimeout(function() { location.reload(); }, 1000);
   }
 });

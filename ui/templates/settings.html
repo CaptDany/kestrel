@@ -429,7 +429,7 @@ function settingsForm() {
                 body: JSON.stringify({ budget_mode:this.budgetMode, budget_amount:this.budgetAmount,
                     purchase_mode:this.purchaseMode, sort_criteria:this.sortCriteria, currency:this.currency,
                     extractor_mode:this.extractorMode, scraper_url:this.scraperUrl })
-            }).then(r => { if(r.ok) alert('Settings saved!'); });
+            }).then(r => { if(r.ok) toast('Settings saved!'); });
         }
     };
 }
@@ -461,15 +461,15 @@ function notifForm() {
                     notify_quiet_start: this.quietStart,
                     notify_quiet_end: this.quietEnd,
                 })
-            }).then(r => { if(r.ok) { this.testResult = 'Saved!'; setTimeout(() => this.testResult = '', 2000); } });
+            }).then(r => { if(r.ok) toast('Settings saved!'); });
         },
         sendTest(channel) {
-            this.testResult = 'Sending...';
             fetch('/api/notify/test', { method:'POST', headers:{'Content-Type':'application/json'},
                 body: JSON.stringify({ channel })
             }).then(r => {
-                this.testResult = r.ok ? 'Test sent successfully!' : 'Test failed - check server logs';
-            }).catch(() => { this.testResult = 'Request failed'; });
+                if (r.ok) toast('Test sent successfully!');
+                else toast('Test failed - check server logs', 'error');
+            }).catch(() => { toast('Request failed', 'error'); });
         }
     };
 }

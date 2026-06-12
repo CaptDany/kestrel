@@ -125,7 +125,24 @@ body { background-color: {{$bgValue}}; color: #e2e1ec; font-family: 'Inter', san
 .htmx-request.htmx-indicator { opacity: 1; }
 tr.htmx-swapping { opacity: 0; transition: opacity 200ms ease-out; }
 input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.toast-enter { animation: toast-in 0.3s ease-out; }
+.toast-exit { animation: toast-out 0.3s ease-in forwards; }
+@keyframes toast-in { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes toast-out { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
 </style>
+<script>
+document.addEventListener('alpine:init', function() {
+  Alpine.store('toast', {
+    show: false, message: '', type: 'success', timer: null,
+    fire(msg, t) {
+      this.message = msg; this.type = t || 'success'; this.show = true;
+      clearTimeout(this.timer);
+      this.timer = setTimeout(() => { this.show = false; }, 3000);
+    }
+  });
+});
+function toast(msg, type) { Alpine.store('toast').fire(msg, type); }
+</script>
 </head>
 <body class="overflow-x-hidden">
 <div class="flex min-h-screen">
@@ -163,5 +180,11 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-app
 </div>
 </header>
 <main class="flex-1 md:ml-[240px] p-container-margin-mobile md:p-container-margin-desktop min-h-screen pb-32 md:pb-xl w-full max-w-full">
+<div x-data x-show="$store.toast.show" x-cloak class="fixed top-4 right-4 z-[200] max-w-sm w-full pointer-events-none" @click="$store.toast.show=false">
+  <div class="pointer-events-auto glass-card rounded-xl px-lg py-md flex items-center gap-3 shadow-2xl" :class="$store.toast.type==='error'?'border-l-4 border-red-500':'border-l-4 border-emerald-500'" x-init="$el.classList.add('toast-enter')">
+    <span class="material-symbols-outlined" :class="$store.toast.type==='error'?'text-red-400':'text-emerald-400'" x-text="$store.toast.type==='error'?'error':'check_circle'"></span>
+    <span class="font-body-md text-body-md text-on-surface flex-1" x-text="$store.toast.message"></span>
+  </div>
+</div>
 {{if .Error}}<div class="bg-error-container text-on-error-container px-lg py-md rounded-xl mb-lg flex items-center gap-3"><span class="material-symbols-outlined">error</span><span>{{.Error}}</span></div>{{end}}
 {{end}}
