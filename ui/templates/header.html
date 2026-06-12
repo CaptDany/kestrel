@@ -1,35 +1,164 @@
 {{define "header"}}
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html class="dark" lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>kestrel - {{.Title}}</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
-    <link rel="stylesheet" href="/static/css/app.css">
-    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
-    <script src="https://unpkg.com/htmx.org@2.0.4/dist/ext/json-enc.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Kestrel | {{.Title}}</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/htmx.org@2.0.4"></script>
+<script src="https://unpkg.com/htmx.org@2.0.4/dist/ext/json-enc.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
+<script>
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "on-primary": "#002681",
+        "on-secondary-container": "#b9b8bc",
+        "on-primary-container": "#dde1ff",
+        "inverse-surface": "#e2e1ec",
+        "on-tertiary": "#552100",
+        "surface": "#12131a",
+        "inverse-on-surface": "#2f3038",
+        "surface-container-low": "#1a1b22",
+        "background": "#12131a",
+        "primary-fixed": "#dce1ff",
+        "on-tertiary-container": "#ffdccc",
+        "secondary-fixed": "#e3e2e6",
+        "tertiary-fixed-dim": "#ffb690",
+        "inverse-primary": "#2f54cb",
+        "on-primary-fixed": "#001551",
+        "on-surface-variant": "#c4c5d6",
+        "surface-variant": "#33343c",
+        "surface-container-highest": "#33343c",
+        "surface-bright": "#383941",
+        "secondary": "#c7c6ca",
+        "surface-container": "#1e1f27",
+        "surface-dim": "#12131a",
+        "on-error-container": "#ffdad6",
+        "on-background": "#e2e1ec",
+        "surface-container-high": "#282a31",
+        "tertiary-fixed": "#ffdbcb",
+        "on-surface": "#e2e1ec",
+        "error-container": "#93000a",
+        "tertiary": "#ffb690",
+        "surface-tint": "#b7c4ff",
+        "error": "#ffb4ab",
+        "secondary-fixed-dim": "#c7c6ca",
+        "on-secondary-fixed-variant": "#46474a",
+        "outline-variant": "#444654",
+        "on-tertiary-fixed": "#341100",
+        "primary": "#b7c4ff",
+        "on-primary-fixed-variant": "#0439b3",
+        "outline": "#8e909f",
+        "on-error": "#690005",
+        "on-secondary": "#2f3033",
+        "secondary-container": "#48494c",
+        "on-tertiary-fixed-variant": "#783100",
+        "surface-container-lowest": "#0c0e15",
+        "tertiary-container": "#a84800",
+        "on-secondary-fixed": "#1a1b1e",
+        "primary-container": "#375bd2",
+        "primary-fixed-dim": "#b7c4ff"
+      },
+      borderRadius: {
+        DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"
+      },
+      spacing: {
+        lg: "24px", xl: "32px", base: "4px", gutter: "16px", md: "16px", xs: "4px", sm: "8px",
+        "container-margin-desktop": "40px",
+        "container-margin-mobile": "16px"
+      },
+      fontFamily: {
+        "headline-md": ["Inter"], "headline-lg": ["Inter"], "label-sm": ["Inter"],
+        "display-lg": ["Inter"], "headline-lg-mobile": ["Inter"], "body-sm": ["Inter"],
+        "label-md": ["Inter"], "body-lg": ["Inter"]
+      },
+      fontSize: {
+        "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+        "label-sm": ["11px", {"lineHeight": "14px", "fontWeight": "500"}],
+        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+      }
+    }
+  }
+}
+</script>
+<style>
+{{$bgMode := index .Settings "background_mode"}}
+{{$bgValue := index .Settings "background_value"}}
+{{$bgOverlay := index .Settings "background_overlay"}}
+{{if eq $bgMode "image"}}
+body { background: url('{{$bgValue}}') center/cover fixed; color: #e2e1ec; font-family: 'Inter', sans-serif; position: relative; }
+body::before { content: ''; position: fixed; inset: 0; background: rgba(0,0,0,{{$bgOverlay}}); z-index: -1; pointer-events: none; }
+{{else if eq $bgMode "gradient"}}
+body { background: {{$bgValue}}; color: #e2e1ec; font-family: 'Inter', sans-serif; }
+{{else}}
+body { background-color: {{$bgValue}}; color: #e2e1ec; font-family: 'Inter', sans-serif; }
+{{end}}
+.material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+.fill-icon { font-variation-settings: 'FILL' 1; }
+.glass-card { background: rgba(26, 27, 30, 0.8); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.04); transition: all 0.2s ease-in-out; }
+.glass-card:hover { background: rgba(44, 45, 49, 0.9); border-color: rgba(255, 255, 255, 0.08); }
+.tonal-layer-1 { background-color: #1A1B1E; border: 1px solid rgba(255, 255, 255, 0.04); }
+.tonal-layer-2 { background-color: #2C2D31; }
+.shimmer { background: linear-gradient(90deg, #1A1B1E 25%, #2C2D31 50%, #1A1B1E 75%); background-size: 200% 100%; animation: shimmer 2s infinite linear; }
+@keyframes shimmer { to { background-position: -200% 0; } }
+::-webkit-scrollbar { width: 6px; }
+{{if eq $bgMode "image"}}
+::-webkit-scrollbar-track { background: transparent; }
+{{else}}
+::-webkit-scrollbar-track { background: {{$bgValue}}; }
+{{end}}
+::-webkit-scrollbar-thumb { background: #2C2D31; border-radius: 10px; }
+.htmx-indicator { opacity: 0; transition: opacity 200ms ease-in; }
+.htmx-request .htmx-indicator { opacity: 1; }
+.htmx-request.htmx-indicator { opacity: 1; }
+tr.htmx-swapping { opacity: 0; transition: opacity 200ms ease-out; }
+input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+</style>
 </head>
-<body>
-    <nav class="navbar is-dark" role="navigation">
-        <div class="navbar-brand">
-            <a class="navbar-item" href="/"><strong>kestrel</strong></a>
-            <a role="button" class="navbar-burger" data-target="navMenu">
-                <span></span><span></span><span></span>
-            </a>
-        </div>
-        <div class="navbar-menu" id="navMenu">
-            <div class="navbar-start">
-                <a class="navbar-item" href="/">Dashboard</a>
-                <a class="navbar-item" href="/items">Items</a>
-                <a class="navbar-item" href="/schedule">Schedule</a>
-                <a class="navbar-item" href="/settings">Settings</a>
-            </div>
-        </div>
-    </nav>
-    <section class="section">
-        <div class="container">
-            <h1 class="title">{{.Title}}</h1>
-            {{if .Error}}<div class="notification is-danger">{{.Error}}</div>{{end}}
+<body class="overflow-x-hidden">
+<div class="flex min-h-screen">
+<aside class="fixed left-0 top-0 h-screen w-[240px] bg-surface-container-low flex-col gap-lg p-md hidden md:flex z-50 border-r border-outline-variant/10">
+<div class="flex items-center gap-sm px-2">
+<div class="w-8 h-8 bg-primary-container rounded-lg flex items-center justify-center"><span class="material-symbols-outlined text-on-primary-container text-xl">rocket_launch</span></div>
+<div class="flex flex-col"><span class="font-headline-md text-headline-md font-black text-primary leading-tight">Kestrel</span><span class="font-label-md text-label-md text-on-surface-variant opacity-70">Purchase Planner</span></div>
+</div>
+<nav class="flex-1 flex flex-col gap-sm" id="sidebar-nav">
+<a class="nav-link flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all rounded-lg" href="/">
+<span class="material-symbols-outlined">dashboard</span><span class="font-label-md text-label-md">Dashboard</span>
+</a>
+<a class="nav-link flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all rounded-lg" href="/items">
+<span class="material-symbols-outlined">inventory_2</span><span class="font-label-md text-label-md">Items</span>
+</a>
+<a class="nav-link flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all rounded-lg" href="/schedule">
+<span class="material-symbols-outlined">calendar_today</span><span class="font-label-md text-label-md">Schedule</span>
+</a>
+<a class="nav-link flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all rounded-lg" href="/settings">
+<span class="material-symbols-outlined">settings</span><span class="font-label-md text-label-md">Settings</span>
+</a>
+</nav>
+<div class="mt-auto pt-md border-t border-outline-variant/10">
+<a href="/items/new" class="w-full bg-primary-container text-on-primary-container py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:brightness-110 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-sm">add</span><span class="font-label-md text-label-md">New Purchase</span>
+</a>
+</div>
+</aside>
+<header class="md:hidden flex justify-between items-center w-full px-container-margin-mobile py-md bg-surface sticky top-0 z-40">
+<span class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary">Kestrel</span>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">notifications</span>
+</div>
+</header>
+<main class="flex-1 md:ml-[240px] p-container-margin-mobile md:p-container-margin-desktop min-h-screen pb-32 md:pb-xl w-full max-w-full">
+{{if .Error}}<div class="bg-error-container text-on-error-container px-lg py-md rounded-xl mb-lg flex items-center gap-3"><span class="material-symbols-outlined">error</span><span>{{.Error}}</span></div>{{end}}
 {{end}}

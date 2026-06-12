@@ -2,59 +2,130 @@
 {{$data := .Data}}
 {{$plan := $data.plan}}
 {{$settings := $data.settings}}
-
-<div class="level">
-    <div class="level-left">
-        <button class="button is-primary" hx-post="/api/plan/generate" hx-ext="json-enc" hx-target="#plan-msg" hx-indicator="#plan-spinner">Regenerate Plan</button>
-    </div>
-    <div class="level-right">
-        <span class="tag is-info">Mode: {{index $settings "purchase_mode"}}</span>
-        <span class="tag is-info">Sort: {{index $settings "sort_criteria"}}</span>
-        <span class="tag is-info">Budget: {{index $settings "budget_amount"}} {{index $settings "currency"}}</span>
-    </div>
+<header class="flex justify-between items-center w-full mb-xl">
+<div class="flex flex-col">
+<h1 class="font-headline-lg text-headline-lg font-bold text-primary">Schedule</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Manage your purchasing timeline</p>
 </div>
-<div id="plan-spinner" class="htmx-indicator" style="display:none;"><progress class="progress is-small is-primary" max="100">15%</progress></div>
+<button class="bg-primary-container text-on-primary-container px-6 py-2.5 rounded-full font-label-md flex items-center gap-2 hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-primary-container/20" id="generateBtn" hx-post="/api/plan/generate" hx-ext="json-enc" hx-target="#plan-msg" hx-indicator="#plan-spinner">
+<span class="material-symbols-outlined text-[20px]">refresh</span>
+<span>Generate Plan</span>
+</button>
+</header>
+<div id="plan-spinner" class="htmx-indicator flex justify-center py-md"><div class="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div></div>
 <div id="plan-msg"></div>
-
+<section class="grid grid-cols-1 md:grid-cols-3 gap-md mb-xl">
+<div class="tonal-layer-1 p-lg rounded-xl">
+<span class="font-label-md text-on-surface-variant block mb-sm">Budget per Cycle</span>
+<div class="flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg text-primary">{{index $settings "budget_amount"}} {{index $settings "currency"}}</span>
+</div>
+<div class="mt-2 text-xs text-on-surface-variant">Mode: {{index $settings "budget_mode"}}</div>
+</div>
+<div class="tonal-layer-1 p-lg rounded-xl">
+<span class="font-label-md text-on-surface-variant block mb-sm">Scheduled Items</span>
+<div class="flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg text-on-surface">{{len $plan}}</span>
+<span class="font-label-sm text-on-surface-variant">Items</span>
+</div>
+</div>
+<div class="tonal-layer-1 p-lg rounded-xl">
+<span class="font-label-md text-on-surface-variant block mb-sm">Sort Criteria</span>
+<div class="flex items-baseline gap-2">
+<span class="font-headline-md text-headline-md text-tertiary">{{index $settings "sort_criteria"}}</span>
+</div>
+<div class="mt-2 text-xs text-on-surface-variant">Purchase mode: {{index $settings "purchase_mode"}}</div>
+</div>
+</section>
 {{if $plan}}
-<div class="table-container">
-    <table class="table is-fullwidth is-striped is-hoverable">
-        <thead><tr><th>Date</th><th>Item</th><th>Price</th><th>Allocated</th><th>Cycle</th><th>Status</th></tr></thead>
-        <tbody>
-            {{range $plan}}
-            <tr>
-                <td>{{.ScheduledDate}}</td>
-                <td><a href="{{.ItemURL}}" target="_blank" rel="noopener">{{.ItemTitle}}</a></td>
-                <td>{{if .ItemPrice}}{{printf "%.2f" .ItemPrice}}{{else}}—{{end}}</td>
-                <td>{{if .AmountAllocated}}{{printf "%.2f" .AmountAllocated}}{{else}}—{{end}}</td>
-                <td>{{.BudgetCycle}}</td>
-                <td>{{if eq .Status "planned"}}<span class="tag is-info">Planned</span>{{else if eq .Status "completed"}}<span class="tag is-success">Completed</span>{{else}}<span class="tag">{{.Status}}</span>{{end}}</td>
-            </tr>
-            {{end}}
-        </tbody>
-    </table>
+<div class="space-y-xl" id="scheduleGrid">
+{{$lastCycle := ""}}
+{{range $i, $p := $plan}}
+{{if ne $p.BudgetCycle $lastCycle}}
+{{if $lastCycle}}</div>{{end}}
+{{$lastCycle = $p.BudgetCycle}}
+<div class="relative pl-8">
+<div class="absolute left-[3px] top-0 bottom-0 w-px bg-outline-variant/30"></div>
+<div class="flex items-center gap-3 mb-md -ml-[13px]">
+<div class="w-6 h-6 rounded-full bg-primary border-4 border-surface flex items-center justify-center"></div>
+<h3 class="font-headline-md text-headline-md text-primary">Cycle <span class="font-normal text-on-surface-variant opacity-60 ml-2">{{$p.BudgetCycle}}</span></h3>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-md">
+{{end}}
+<div class="tonal-layer-1 p-md rounded-xl border border-outline-variant/5 hover:border-primary/20 transition-all group">
+<div class="flex justify-between items-start mb-md">
+<div>
+<h4 class="font-headline-md text-headline-md mb-1"><a href="{{$p.ItemURL}}" target="_blank" rel="noopener" class="hover:text-primary transition-colors">{{$p.ItemTitle}}</a></h4>
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider">Rank #{{$p.Rank}}</span>
+<span class="text-on-surface-variant font-label-sm">{{$p.ScheduledDate}}</span>
+</div>
+</div>
+<span class="font-headline-md text-headline-md text-on-surface">{{if $p.ItemPrice}}{{printf "$%.2f" $p.ItemPrice}}{{else}}—{{end}}</span>
+</div>
+<div class="flex items-center justify-between pt-md border-t border-outline-variant/10">
+<div class="flex flex-col">
+<span class="text-[10px] text-on-surface-variant font-medium uppercase">Allocated</span>
+<span class="font-label-md text-primary">{{if $p.AmountAllocated}}{{printf "$%.2f" $p.AmountAllocated}}{{else}}$0.00{{end}}</span>
+</div>
+{{$alloc := $p.AmountAllocated}}
+{{$price := $p.ItemPrice}}
+{{$status := $p.Status}}
+{{if or (eq $status "completed") (eq $status "purchased")}}
+<div class="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 rounded-full">
+<div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+<span class="text-emerald-500 font-label-sm">Purchased</span>
+</div>
+{{else if and $alloc $price (eq $alloc $price)}}
+<div class="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 rounded-full">
+<div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+<span class="text-emerald-500 font-label-sm">Fully Funded</span>
+</div>
+{{else if and $alloc $price (gt $alloc 0.0)}}
+<div class="flex items-center gap-2 px-3 py-1 bg-orange-500/10 rounded-full">
+<div class="w-2 h-2 rounded-full bg-orange-500"></div>
+<span class="text-orange-500 font-label-sm">Partial</span>
 </div>
 {{else}}
-<div class="notification is-warning">
-    <p>No purchase plan yet. Add some items and configure paydays in <a href="/settings">Settings</a>, then generate a plan.</p>
+<div class="flex items-center gap-2 px-3 py-1 bg-surface-variant rounded-full">
+<div class="w-2 h-2 rounded-full bg-outline"></div>
+<span class="text-on-surface-variant font-label-sm">Queued</span>
 </div>
 {{end}}
-
-<div class="box">
-    <h2 class="subtitle">How Scheduling Works</h2>
-    <ol>
-        <li>Items are sorted by your selected criteria (price, priority, date added, etc.)</li>
-        <li>Each pay cycle, items are allocated within your budget</li>
-        <li>If an item costs more than your per-cycle budget, it enters <strong>Saving</strong> mode across cycles</li>
-        <li>Purchase mode <strong>"one"</strong> schedules one item per cycle; <strong>"as many as possible"</strong> packs the budget</li>
-    </ol>
+</div>
+</div>
+{{end}}
+</div>
+</div>
+{{range $plan | tail}}{{end}}
+{{else}}
+<div class="flex flex-col items-center justify-center py-24 text-center" id="emptyState">
+<div class="w-24 h-24 bg-surface-container flex items-center justify-center rounded-full mb-lg border-2 border-dashed border-outline-variant">
+<span class="material-symbols-outlined text-4xl text-on-surface-variant">calendar_month</span>
+</div>
+<h2 class="font-headline-md text-headline-md text-on-surface mb-2">No plan generated yet</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-xl max-w-sm">Add some items and configure paydays in Settings, then generate a plan.</p>
+<a href="/settings" class="border border-outline px-8 py-3 rounded-full text-on-surface font-label-md hover:bg-surface-variant transition-colors">Configure Budget</a>
+</div>
+{{end}}
+<div class="flex flex-col md:flex-row justify-between items-center glass-card p-lg rounded-2xl gap-md mt-xl">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 bg-primary/20 rounded-xl flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">info</span>
+</div>
+<div>
+<p class="font-label-md text-on-surface">How Scheduling Works</p>
+<p class="text-[12px] text-on-surface-variant">Items sorted by criteria, allocated per pay cycle. Oversized items enter saving mode.</p>
+</div>
+</div>
+<a href="/settings" class="bg-surface-container-high px-6 py-2 rounded-lg font-label-md text-on-surface hover:brightness-125 transition-all">Edit Pay Cycles</a>
 </div>
 <script>
 document.body.addEventListener('htmx:afterRequest', function(evt) {
-    if (evt.target.id === 'plan-msg' && evt.detail.successful) {
-        document.getElementById('plan-msg').innerHTML = '<div class="notification is-success">Plan regenerated!</div>';
-        setTimeout(() => location.reload(), 1000);
-    }
+  if (evt.target.id === 'plan-msg' && evt.detail.successful) {
+    document.getElementById('plan-msg').innerHTML = '<div class="bg-primary/10 text-primary px-md py-2 rounded-lg text-sm flex items-center gap-2"><span class="material-symbols-outlined text-sm">check_circle</span>Plan regenerated!</div>';
+    setTimeout(function() { location.reload(); }, 1000);
+  }
 });
 </script>
 {{template "footer" .}}

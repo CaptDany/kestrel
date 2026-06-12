@@ -1,57 +1,117 @@
 {{template "header" .}}
-<div class="level">
-    <div class="level-left">
-        <div class="buttons">
-            <a class="button is-primary" href="/items/new">Add Item</a>
-            <button class="button is-info" hx-post="/api/plan/generate" hx-ext="json-enc" hx-target="#plan-msg" hx-indicator="#plan-spinner">Generate Plan</button>
-        </div>
-    </div>
-    <div class="level-right">
-        <div class="field has-addons">
-            <p class="control"><a class="button is-small" href="/items">All</a></p>
-            <p class="control"><a class="button is-small" href="/items?status=pending">Pending</a></p>
-            <p class="control"><a class="button is-small" href="/items?status=saving">Saving</a></p>
-            <p class="control"><a class="button is-small" href="/items?status=purchased">Purchased</a></p>
-        </div>
-    </div>
-</div>
-<div id="plan-spinner" class="htmx-indicator" style="display:none;"><progress class="progress is-small is-info" max="100">15%</progress></div>
-<div id="plan-msg"></div>
-
 {{$items := .Data}}
-<div class="table-container">
-    <table class="table is-fullwidth is-striped is-hoverable">
-        <thead>
-            <tr><th>Title</th><th>Price</th><th>Priority</th><th>Status</th><th>Added</th><th>Actions</th></tr>
-        </thead>
-        <tbody>
-            {{range $items}}
-            <tr>
-                <td><a href="{{.URL}}" target="_blank" rel="noopener">{{.Title}}</a>{{if .Category}} <span class="tag is-light">{{.Category}}</span>{{end}}</td>
-                <td>{{if .Price}}{{printf "%.2f" .Price}} {{.Currency}}{{else}}—{{end}}</td>
-                <td>{{if eq .Priority 1}}<span class="tag is-danger">High</span>{{else if eq .Priority -1}}<span class="tag is-warning">Low</span>{{else}}<span class="tag">Normal</span>{{end}}</td>
-                <td>{{if eq .Status "pending"}}<span class="tag is-info">Pending</span>{{else if eq .Status "saving"}}<span class="tag is-warning">Saving</span>{{else if eq .Status "purchased"}}<span class="tag is-success">Purchased</span>{{else if eq .Status "skipped"}}<span class="tag is-light">Skipped</span>{{else}}<span class="tag">{{.Status}}</span>{{end}}</td>
-                <td>{{.CreatedAt}}</td>
-                <td>
-                    <div class="buttons are-small">
-                        <a class="button" href="/items/{{.ID}}/edit">Edit</a>
-                        <button class="button is-success" hx-post="/api/items/{{.ID}}/purchase" hx-target="closest tr" hx-swap="outerHTML" hx-ext="json-enc">Buy</button>
-                        <button class="button is-danger is-light" hx-delete="/api/items/{{.ID}}" hx-target="closest tr" hx-swap="outerHTML" hx-confirm="Delete this item?">Del</button>
-                    </div>
-                </td>
-            </tr>
-            {{else}}
-            <tr><td colspan="6" class="has-text-centered has-text-grey">No items yet. <a href="/items/new">Add one!</a></td></tr>
-            {{end}}
-        </tbody>
-    </table>
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-lg mb-xl">
+<div>
+<h2 class="font-headline-lg text-headline-lg font-bold text-on-surface">Planned Items</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Manage and track your upcoming acquisitions.</p>
 </div>
+<a href="/items/new" class="bg-primary-container text-on-primary-container px-lg py-md rounded-xl font-bold flex items-center justify-center gap-sm hover:brightness-110 transition-all shadow-lg shadow-primary-container/20">
+<span class="material-symbols-outlined">add_circle</span> Add Item
+</a>
+</div>
+<div class="flex items-center gap-sm mb-xl overflow-x-auto pb-2" style="scrollbar-width:none" id="filter-chips">
+<a href="/items" class="filter-chip px-lg py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all text-on-surface-variant hover:bg-surface-container-high" data-status="">All Items</a>
+<a href="/items?status=pending" class="filter-chip px-lg py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all text-on-surface-variant hover:bg-surface-container-high" data-status="pending">Pending</a>
+<a href="/items?status=purchased" class="filter-chip px-lg py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all text-on-surface-variant hover:bg-surface-container-high" data-status="purchased">Purchased</a>
+<a href="/items?status=saving" class="filter-chip px-lg py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all text-on-surface-variant hover:bg-surface-container-high" data-status="saving">Saving</a>
+</div>
+{{if $items}}
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-lg">
+{{range $items}}
+<div class="glass-card rounded-xl p-lg flex flex-col gap-md relative group" id="item-{{.ID}}">
+<div class="flex justify-between items-start">
+<span class="bg-primary/10 text-primary px-3 py-1 rounded-full font-label-sm text-label-sm uppercase tracking-wider">{{if .Category}}{{.Category}}{{else}}General{{end}}</span>
+<div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<a href="/items/{{.ID}}/edit" class="text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-[20px]">edit</span></a>
+<button class="text-on-surface-variant hover:text-error transition-colors" hx-delete="/api/items/{{.ID}}" hx-target="#item-{{.ID}}" hx-swap="outerHTML" hx-confirm="Delete this item?"><span class="material-symbols-outlined text-[20px]">delete</span></button>
+</div>
+</div>
+<div class="flex flex-col gap-xs mt-2">
+<a href="{{.URL}}" target="_blank" rel="noopener" class="font-headline-md text-headline-md hover:text-primary transition-colors {{if eq .Status "purchased"}}line-through text-on-surface-variant{{end}}">{{.Title}}</a>
+<p class="font-display-lg text-headline-lg text-primary">{{if .Price}}{{printf "$%.2f" .Price}}{{else}}—{{end}}</p>
+</div>
+<div class="flex items-center gap-1 text-tertiary priority-stars" data-priority="{{.Priority}}">
+<span class="ml-2 font-label-sm text-label-sm text-on-surface-variant">Priority {{.Priority}}</span>
+</div>
+<div class="grid grid-cols-2 gap-md mt-2 p-md bg-surface-container-lowest rounded-lg border border-outline-variant/10">
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase">Desired Date</p>
+<p class="font-body-sm text-body-sm text-on-surface mt-1">{{if .DesiredDate}}{{derefs .DesiredDate}}{{else}}—{{end}}</p>
+</div>
+<div class="flex flex-col items-end">
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase">Confirmed</p>
+{{if .PriceConfirmed}}
+<span class="text-emerald-500 font-label-sm text-[10px] flex items-center gap-1 mt-1"><span class="material-symbols-outlined text-sm">check</span> Yes</span>
+{{else}}
+<span class="text-on-surface-variant font-label-sm text-[10px]">No</span>
+{{end}}
+</div>
+</div>
+{{if eq .Status "saving"}}
+<div class="w-full bg-surface-variant h-1.5 rounded-full mt-2 overflow-hidden">
+<div class="bg-primary w-1/2 h-full rounded-full"></div>
+</div>
+{{end}}
+<div class="mt-auto pt-4 flex items-center justify-between border-t border-outline-variant/10">
+<div class="flex items-center gap-2">
+{{if eq .Status "pending"}}
+<div class="w-2 h-2 rounded-full bg-tertiary animate-pulse"></div>
+<span class="font-label-sm text-label-sm text-tertiary">Pending</span>
+{{else if eq .Status "saving"}}
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+<span class="font-label-sm text-label-sm text-primary">Saving</span>
+{{else if eq .Status "purchased"}}
+<span class="material-symbols-outlined text-emerald-500 text-[20px]">check_circle</span>
+<span class="font-label-sm text-label-sm text-emerald-500">Purchased</span>
+{{else}}
+<div class="w-2 h-2 rounded-full bg-outline"></div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">{{.Status}}</span>
+{{end}}
+</div>
+{{if ne .Status "purchased"}}
+<button class="bg-primary-container text-on-primary-container px-md py-2 rounded-lg font-bold font-label-md text-label-md hover:brightness-110 active:scale-95 transition-all" hx-post="/api/items/{{.ID}}/purchase" hx-target="#item-{{.ID}}" hx-swap="outerHTML" hx-ext="json-enc">Mark Purchased</button>
+{{end}}
+</div>
+</div>
+{{end}}
+</div>
+{{else}}
+<div class="flex flex-col items-center justify-center text-center py-32 max-w-md mx-auto">
+<div class="w-24 h-24 bg-surface-container flex items-center justify-center rounded-full mb-lg border-2 border-dashed border-outline-variant">
+<span class="material-symbols-outlined text-4xl text-on-surface-variant">inventory_2</span>
+</div>
+<h3 class="font-headline-lg text-headline-lg-mobile text-on-surface mb-md">Your list is a blank canvas</h3>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-xl">Start planning your future acquisitions with Kestrel. Every great purchase begins with a clear vision.</p>
+<a href="/items/new" class="bg-primary text-on-primary px-xl py-md rounded-xl font-bold hover:brightness-110 active:scale-95 transition-all">Add your first item</a>
+</div>
+{{end}}
 <script>
-document.body.addEventListener('htmx:afterRequest', function(evt) {
-    if (evt.target.id === 'plan-msg' && evt.detail.successful) {
-        document.getElementById('plan-msg').innerHTML = '<div class="notification is-success">Plan generated!</div>';
-        setTimeout(() => location.reload(), 1000);
+(function() {
+  var params = new URLSearchParams(window.location.search);
+  var status = params.get('status') || '';
+  document.querySelectorAll('.filter-chip').forEach(function(chip) {
+    if (chip.getAttribute('data-status') === status) {
+      chip.classList.add('bg-white', 'text-black');
+      chip.classList.remove('text-on-surface-variant', 'hover:bg-surface-container-high');
     }
+  });
+  document.querySelectorAll('.priority-stars').forEach(function(el) {
+    var p = parseInt(el.getAttribute('data-priority')) || 0;
+    var html = '';
+    var filled = 0;
+    if (p >= 1 && p <= 5) { filled = p; }
+    else if (p === 1) { filled = 5; }
+    else if (p === 0) { filled = 3; }
+    else { filled = 1; }
+    for (var i = 0; i < filled; i++) { html += '<span class="material-symbols-outlined fill-icon text-[18px]">star</span>'; }
+    for (var i = filled; i < 5; i++) { html += '<span class="material-symbols-outlined text-[18px] text-on-surface-variant/30">star</span>'; }
+    el.innerHTML = html + el.innerHTML;
+  });
+})();
+document.body.addEventListener('htmx:afterSettle', function(evt) {
+  if (evt.detail.elt && evt.detail.elt.hasAttribute('hx-post') && evt.detail.elt.getAttribute('hx-post').includes('/purchase')) {
+    location.reload();
+  }
 });
 </script>
 {{template "footer" .}}

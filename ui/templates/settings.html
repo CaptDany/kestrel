@@ -3,270 +3,417 @@
 {{$settings := $data.settings}}
 {{$paydays := $data.paydays}}
 {{$budgetEntries := $data.budgetEntries}}
-
-<div class="columns">
-    <div class="column is-6">
-        <div class="box">
-            <h2 class="subtitle">General Settings</h2>
-            <form x-data="settingsForm()" @submit.prevent="save">
-                <div class="field">
-                    <label class="label">Budget Mode</label>
-                    <div class="control">
-                        <div class="select is-fullwidth">
-                            <select name="budget_mode" x-model="budgetMode">
-                                <option value="per_payday">Per Payday (fixed amount each cycle)</option>
-                                <option value="flexible">Flexible (base + bonuses)</option>
-                                <option value="total">Total Pool (plan within a total budget)</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="field">
-                    <label class="label">Budget Amount</label>
-                    <div class="control"><input class="input" type="number" step="0.01" name="budget_amount" x-model="budgetAmount" placeholder="0.00"></div>
-                </div>
-
-                <div class="field">
-                    <label class="label">Purchase Mode</label>
-                    <div class="control">
-                        <div class="select is-fullwidth">
-                            <select name="purchase_mode" x-model="purchaseMode">
-                                <option value="as_many_as_possible">As Many As Possible (fill the budget)</option>
-                                <option value="one">One At A Time (one item per cycle)</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="field">
-                    <label class="label">Sort Criteria</label>
-                    <div class="control">
-                        <div class="select is-fullwidth">
-                            <select name="sort_criteria" x-model="sortCriteria">
-                                <option value="price_asc">Cheapest First</option>
-                                <option value="price_desc">Most Expensive First</option>
-                                <option value="priority">Priority (high first)</option>
-                                <option value="date_added">Date Added (oldest first)</option>
-                                <option value="desired_date">Desired Date (earliest first)</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="field">
-                    <label class="label">Currency</label>
-                    <div class="control"><input class="input" type="text" name="currency" x-model="currency" placeholder="USD" maxlength="3"></div>
-                </div>
-
-                <div class="field">
-                    <label class="label">Extractor Mode</label>
-                    <div class="control">
-                        <div class="select is-fullwidth">
-                            <select name="extractor_mode" x-model="extractorMode">
-                                <option value="http">HTTP Scraper (lightweight, no JS)</option>
-                                <option value="playwright">Playwright (full browser, handles JS sites)</option>
-                                <option value="external">External Scraper API</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="field" x-show="extractorMode === 'external'">
-                    <label class="label">External Scraper URL</label>
-                    <div class="control"><input class="input" type="url" name="scraper_url" x-model="scraperUrl" placeholder="http://scraper:8001"></div>
-                </div>
-
-                <div class="field"><button class="button is-primary" type="submit">Save Settings</button></div>
-            </form>
-        </div>
-
-        <div class="box">
-            <h2 class="subtitle">Price Tracker</h2>
-            <p class="help">Periodically re-scrape item prices and notify on drops.</p>
-            <form x-data="trackerForm()" @submit.prevent="save">
-                <div class="field">
-                    <label class="label">Enable Price Tracking</label>
-                    <div class="control">
-                        <input type="checkbox" x-model="enabled" @change="save">
-                    </div>
-                </div>
-                <template x-if="enabled">
-                    <div>
-                        <div class="field">
-                            <label class="label">Check Interval (seconds)</label>
-                            <div class="control"><input class="input" type="number" x-model="interval" @change.debounce="save" placeholder="3600"></div>
-                        </div>
-                        <div class="field">
-                            <label class="label">Drop Threshold (%)</label>
-                            <div class="control"><input class="input" type="number" step="0.1" x-model="thresholdPct" @change.debounce="save" placeholder="5"></div>
-                        </div>
-                        <div class="field">
-                            <label class="label">Minimum Absolute Drop ($)</label>
-                            <p class="help">Set to 0 to notify on any percentage drop above the threshold.</p>
-                            <div class="control"><input class="input" type="number" step="0.01" x-model="thresholdAbs" @change.debounce="save" placeholder="0"></div>
-                        </div>
-                    </div>
-                </template>
-            </form>
-        </div>
-    </div>
-
-    <div class="column is-6">
-        <div class="box">
-            <h2 class="subtitle">Paydays</h2>
-            <form x-data="paydayForm()" @submit.prevent="addPayday" class="mb-3">
-                <div class="field has-addons">
-                    <div class="control">
-                        <div class="select">
-                            <select name="frequency" x-model="frequency">
-                                <option value="monthly">Monthly</option>
-                                <option value="biweekly">Biweekly</option>
-                                <option value="weekly">Weekly</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="control" x-show="frequency === 'monthly'">
-                        <input class="input" type="number" x-model="dayOfMonth" placeholder="Day (1-28 / 99=last)" min="1" max="99" style="width:160px">
-                    </div>
-                    <div class="control">
-                        <input class="input" type="date" x-model="nextDate" placeholder="Next payday" style="width:160px">
-                    </div>
-                    <div class="control">
-                        <input class="input" type="text" x-model="label" placeholder="Label" style="width:120px">
-                    </div>
-                    <div class="control"><button class="button is-success" type="submit">Add</button></div>
-                </div>
-            </form>
-
-            <table class="table is-fullwidth">
-                <thead><tr><th>Label</th><th>Frequency</th><th>Next Date</th><th>Active</th><th></th></tr></thead>
-                <tbody>
-                    {{range $paydays}}
-                    <tr>
-                        <td>{{.Label}}</td>
-                        <td>{{.Frequency}}</td>
-                        <td>{{derefs .NextDate}}</td>
-                        <td><input type="checkbox" {{if eq .Active 1}}checked{{end}} onchange="togglePayday({{.ID}}, this.checked)"></td>
-                        <td><button class="button is-small is-danger is-light" onclick="deletePayday({{.ID}})">Delete</button></td>
-                    </tr>
-                    {{else}}
-                    <tr><td colspan="5" class="has-text-grey has-text-centered">No paydays configured.</td></tr>
-                    {{end}}
-                </tbody>
-            </table>
-        </div>
-
-        <div class="box">
-            <h2 class="subtitle">Notifications</h2>
-            <form x-data="notifForm()" @submit.prevent="save">
-                <div class="field">
-                    <label class="label">Enable Notifications</label>
-                    <div class="control">
-                        <input type="checkbox" x-model="enabled" @change="save">
-                    </div>
-                </div>
-
-                <template x-if="enabled">
-                    <div>
-                        <h3 class="subtitle is-6 mt-3">Email</h3>
-                        <div class="field">
-                            <label class="label">Enable Email</label>
-                            <div class="control">
-                                <input type="checkbox" x-model="emailEnabled" @change="save">
-                            </div>
-                        </div>
-                        <template x-if="emailEnabled">
-                            <div>
-                                <div class="field">
-                                    <label class="label">SMTP Host</label>
-                                    <div class="control"><input class="input" type="text" x-model="smtpHost" @change.debounce="save" placeholder="smtp.gmail.com"></div>
-                                </div>
-                                <div class="field">
-                                    <label class="label">SMTP Port</label>
-                                    <div class="control"><input class="input" type="number" x-model="smtpPort" @change.debounce="save" placeholder="587"></div>
-                                </div>
-                                <div class="field">
-                                    <label class="label">SMTP User</label>
-                                    <div class="control"><input class="input" type="text" x-model="smtpUser" @change.debounce="save" placeholder="user@gmail.com"></div>
-                                </div>
-                                <div class="field">
-                                    <label class="label">SMTP Password</label>
-                                    <div class="control"><input class="input" type="password" x-model="smtpPass" @change.debounce="save" placeholder="app password"></div>
-                                </div>
-                                <div class="field">
-                                    <label class="label">From Address</label>
-                                    <div class="control"><input class="input" type="email" x-model="smtpFrom" @change.debounce="save" placeholder="kestrel@example.com"></div>
-                                </div>
-                                <div class="field">
-                                    <label class="label">To Address</label>
-                                    <div class="control"><input class="input" type="email" x-model="smtpTo" @change.debounce="save" placeholder="you@example.com"></div>
-                                </div>
-                                <div class="field">
-                                    <button class="button is-small is-info" type="button" @click="sendTest('email')">Send Test Email</button>
-                                    <span x-show="testResult" x-text="testResult" class="ml-2 has-text-grey"></span>
-                                </div>
-                            </div>
-                        </template>
-
-                        <h3 class="subtitle is-6 mt-3">Push Notifications</h3>
-                        <div class="field">
-                            <label class="label">Enable Push</label>
-                            <div class="control">
-                                <input type="checkbox" x-model="pushEnabled" disabled>
-                                <span class="help">Coming soon — Apprise / mobile push integration</span>
-                            </div>
-                        </div>
-
-                        <h3 class="subtitle is-6 mt-3">Quiet Hours</h3>
-                        <p class="help">Suppress notifications during these hours.</p>
-                        <div class="field has-addons">
-                            <div class="control">
-                                <input class="input" type="time" x-model="quietStart" @change.debounce="save" style="width:140px">
-                            </div>
-                            <div class="control">
-                                <span class="button is-static">to</span>
-                            </div>
-                            <div class="control">
-                                <input class="input" type="time" x-model="quietEnd" @change.debounce="save" style="width:140px">
-                            </div>
-                        </div>
-                    </div>
-                </template>
-            </form>
-        </div>
-
-        <div class="box">
-            <h2 class="subtitle">One-Time Budget Entries</h2>
-            <p class="help">Add bonuses, pay raises, or extra funds for specific pay cycles.</p>
-            <form x-data="budgetEntryForm()" @submit.prevent="addBudgetEntry">
-                <div class="field has-addons">
-                    <div class="control"><input class="input" type="number" step="0.01" x-model="amount" placeholder="Amount" style="width:120px" required></div>
-                    <div class="control"><input class="input" type="date" x-model="effectiveDate" required style="width:160px"></div>
-                    <div class="control"><input class="input" type="text" x-model="label" placeholder="Label (e.g. Bonus)" style="width:140px"></div>
-                    <div class="control"><button class="button is-success" type="submit">Add</button></div>
-                </div>
-            </form>
-
-            <table class="table is-fullwidth">
-                <thead><tr><th>Amount</th><th>Label</th><th>Cycle Date</th><th></th></tr></thead>
-                <tbody>
-                    {{range $budgetEntries}}
-                    <tr id="be-{{.ID}}">
-                        <td>{{printf "%.2f" .Amount}}</td>
-                        <td>{{.Label}}</td>
-                        <td>{{.EffectiveDate}}</td>
-                        <td><button class="button is-small is-danger is-light" onclick="deleteBudgetEntry({{.ID}})">Delete</button></td>
-                    </tr>
-                    {{else}}
-                    <tr><td colspan="4" class="has-text-grey has-text-centered">No bonus entries.</td></tr>
-                    {{end}}
-                </tbody>
-            </table>
-        </div>
-    </div>
+<div class="max-w-6xl mx-auto pb-32">
+<header class="mb-xl">
+<h1 class="font-headline-lg text-headline-lg text-on-surface">Settings</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Configure budget, notifications, paydays, and more</p>
+</header>
+<section class="grid grid-cols-1 lg:grid-cols-5 gap-lg">
+<div class="lg:col-span-3 flex flex-col gap-lg">
+<div class="glass-card rounded-2xl p-lg" id="general-settings">
+<h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2 mb-lg">
+<span class="material-symbols-outlined text-primary">tune</span> General Settings
+</h3>
+<form x-data="settingsForm()" @submit.prevent="save" class="flex flex-col gap-md">
+<div class="grid grid-cols-2 gap-md">
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Budget Mode</label>
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-xl px-4 py-3 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_1px_#375BD2]">
+<select name="budget_mode" x-model="budgetMode" class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-body-md text-body-md">
+<option value="per_payday">Per Payday</option>
+<option value="flexible">Flexible</option>
+<option value="total">Total Pool</option>
+</select>
 </div>
-
+</div>
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Budget Amount</label>
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-xl px-4 py-3 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_1px_#375BD2]">
+<input class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-body-lg text-body-lg" type="number" step="0.01" name="budget_amount" x-model="budgetAmount" placeholder="0.00"/>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-md">
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Purchase Mode</label>
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-xl px-4 py-3 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_1px_#375BD2]">
+<select name="purchase_mode" x-model="purchaseMode" class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-body-md text-body-md">
+<option value="as_many_as_possible">Fill Budget</option>
+<option value="one">One Per Cycle</option>
+</select>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Sort Criteria</label>
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-xl px-4 py-3 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_1px_#375BD2]">
+<select name="sort_criteria" x-model="sortCriteria" class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-body-md text-body-md">
+<option value="price_asc">Cheapest First</option>
+<option value="price_desc">Most Expensive</option>
+<option value="priority">Priority</option>
+<option value="date_added">Oldest First</option>
+<option value="desired_date">Desired Date</option>
+</select>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Currency</label>
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-xl px-4 py-3 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_1px_#375BD2]">
+<input class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-body-lg text-body-lg uppercase" type="text" name="currency" x-model="currency" placeholder="USD" maxlength="3"/>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-md">
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Extractor</label>
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-xl px-4 py-3 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_1px_#375BD2]">
+<select name="extractor_mode" x-model="extractorMode" class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-body-md text-body-md">
+<option value="http">HTTP</option>
+<option value="playwright">Playwright</option>
+<option value="external">External API</option>
+</select>
+</div>
+</div>
+<div class="flex flex-col gap-2" x-show="extractorMode === 'external'" x-cloak>
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Scraper URL</label>
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-xl px-4 py-3 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_1px_#375BD2]">
+<input class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-body-md text-body-md" type="url" name="scraper_url" x-model="scraperUrl" placeholder="http://scraper:8001"/>
+</div>
+</div>
+</div>
+<div class="flex justify-end mt-md">
+<button class="bg-primary text-on-primary px-8 py-3 rounded-xl font-label-md text-label-md hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-primary/20" type="submit">Save Settings</button>
+</div>
+</form>
+</div>
+<div class="glass-card rounded-2xl p-lg" id="price-tracker">
+<h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2 mb-lg">
+<span class="material-symbols-outlined text-secondary">trending_down</span> Price Tracker
+</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-md">Periodically re-scrape item prices and notify on drops.</p>
+<form x-data="trackerForm()" @submit.prevent="save" class="flex flex-col gap-md">
+<div class="flex items-center justify-between">
+<div>
+<label class="font-label-md text-label-md text-on-surface">Enable Price Tracking</label>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Rescrape prices periodically to detect drops</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input type="checkbox" x-model="enabled" @change="save" class="sr-only peer"/>
+<div class="w-11 h-6 rounded-full peer bg-surface-container-highest peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+</label>
+</div>
+<template x-if="enabled">
+<div class="flex flex-col gap-md pt-md border-t border-outline-variant/10">
+<div class="grid grid-cols-3 gap-md">
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Interval (sec)</label>
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-xl px-4 py-3 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_1px_#375BD2]">
+<input class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-body-md text-body-md" type="number" x-model="interval" @change.debounce="save" placeholder="3600"/>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Drop %</label>
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-xl px-4 py-3 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_1px_#375BD2]">
+<input class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-body-md text-body-md" type="number" step="0.1" x-model="thresholdPct" @change.debounce="save" placeholder="5"/>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Min Drop $</label>
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-xl px-4 py-3 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_1px_#375BD2]">
+<input class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-body-md text-body-md" type="number" step="0.01" x-model="thresholdAbs" @change.debounce="save" placeholder="0"/>
+</div>
+</div>
+</div>
+</div>
+</template>
+</form>
+</div>
+</div>
+<div class="lg:col-span-2 flex flex-col gap-lg">
+<div class="glass-card rounded-2xl p-lg" id="paydays">
+<h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2 mb-lg">
+<span class="material-symbols-outlined text-tertiary">calendar_month</span> Paydays
+</h3>
+<form x-data="paydayForm()" @submit.prevent="addPayday" class="mb-lg">
+<div class="grid grid-cols-4 gap-2">
+<div class="flex flex-col gap-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Freq</label>
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_1px_#375BD2]">
+<select name="frequency" x-model="frequency" class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-body-md text-body-md">
+<option value="monthly">Monthly</option>
+<option value="biweekly">Biweekly</option>
+<option value="weekly">Weekly</option>
+</select>
+</div>
+</div>
+<div class="flex flex-col gap-1" x-show="frequency === 'monthly'">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Day</label>
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_1px_#375BD2]">
+<input class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-body-md text-body-md" type="number" x-model="dayOfMonth" placeholder="1-28/99" min="1" max="99"/>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Next Date</label>
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_1px_#375BD2]">
+<input class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-body-md text-body-md" type="date" x-model="nextDate"/>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Label</label>
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_1px_#375BD2]">
+<input class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-body-md text-body-md" type="text" x-model="label" placeholder="e.g. Salary"/>
+</div>
+</div>
+</div>
+<button class="bg-primary text-on-primary px-6 py-2 rounded-xl font-label-md hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-primary/20 mt-md flex items-center gap-2 ml-auto" type="submit">
+<span class="material-symbols-outlined text-[18px]">add</span> Add Payday
+</button>
+</form>
+<div class="flex flex-col gap-2">
+{{range $paydays}}
+<div class="tonal-layer-1 p-md rounded-xl flex items-center justify-between gap-md" id="pd-{{.ID}}">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-[20px]">payments</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface">{{.Label}}</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">{{.Frequency}} &middot; {{derefs .NextDate}}</p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<label class="relative inline-flex items-center cursor-pointer">
+<input type="checkbox" {{if eq .Active 1}}checked{{end}} onchange="togglePayday({{.ID}}, this.checked)" class="sr-only peer"/>
+<div class="w-9 h-5 rounded-full peer bg-surface-container-highest peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
+</label>
+<button class="text-red-400 hover:text-red-300 transition-colors p-1 rounded-lg hover:bg-red-400/10" onclick="deletePayday({{.ID}})">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</div>
+{{else}}
+<div class="flex flex-col items-center justify-center py-lg text-center">
+<span class="material-symbols-outlined text-3xl text-on-surface-variant mb-2">calendar_month</span>
+<p class="font-body-md text-body-md text-on-surface-variant">No paydays configured yet.</p>
+</div>
+{{end}}
+</div>
+</div>
+<div class="glass-card rounded-2xl p-lg" id="notifications">
+<h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2 mb-lg">
+<span class="material-symbols-outlined text-emerald-400">notifications</span> Notifications
+</h3>
+<form x-data="notifForm()" @submit.prevent="save" class="flex flex-col gap-md">
+<div class="flex items-center justify-between">
+<div>
+<label class="font-label-md text-label-md text-on-surface">Enable Notifications</label>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Receive alerts for price drops and plan updates</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input type="checkbox" x-model="enabled" @change="save" class="sr-only peer"/>
+<div class="w-11 h-6 rounded-full peer bg-surface-container-highest peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+</label>
+</div>
+<template x-if="enabled">
+<div class="flex flex-col gap-md pt-md border-t border-outline-variant/10">
+<div class="flex items-center justify-between">
+<div>
+<label class="font-label-md text-label-md text-on-surface">Email Notifications</label>
+<p class="font-body-sm text-body-sm text-on-surface-variant">SMTP-based email alerts</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input type="checkbox" x-model="emailEnabled" @change="save" class="sr-only peer"/>
+<div class="w-9 h-5 rounded-full peer bg-surface-container-highest peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
+</label>
+</div>
+<template x-if="emailEnabled">
+<div class="grid grid-cols-2 gap-md">
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant">SMTP Host</label>
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-xl px-4 py-3 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_1px_#375BD2]">
+<input class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-body-md text-body-md" type="text" x-model="smtpHost" @change.debounce="save" placeholder="smtp.gmail.com"/>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant">SMTP Port</label>
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-xl px-4 py-3 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_1px_#375BD2]">
+<input class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-body-md text-body-md" type="number" x-model="smtpPort" @change.debounce="save" placeholder="587"/>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant">SMTP User</label>
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-xl px-4 py-3 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_1px_#375BD2]">
+<input class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-body-md text-body-md" type="text" x-model="smtpUser" @change.debounce="save" placeholder="user@gmail.com"/>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant">SMTP Password</label>
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-xl px-4 py-3 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_1px_#375BD2]">
+<input class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-body-md text-body-md" type="password" x-model="smtpPass" @change.debounce="save" placeholder="••••••••"/>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant">From</label>
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-xl px-4 py-3 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_1px_#375BD2]">
+<input class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-body-md text-body-md" type="email" x-model="smtpFrom" @change.debounce="save" placeholder="kestrel@example.com"/>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant">To</label>
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-xl px-4 py-3 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_1px_#375BD2]">
+<input class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-body-md text-body-md" type="email" x-model="smtpTo" @change.debounce="save" placeholder="you@example.com"/>
+</div>
+</div>
+</div>
+</template>
+<div class="flex items-center justify-between">
+<div>
+<label class="font-label-md text-label-md text-on-surface">Push Notifications</label>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Mobile push — coming soon</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer opacity-40">
+<input type="checkbox" x-model="pushEnabled" disabled class="sr-only peer"/>
+<div class="w-9 h-5 rounded-full bg-surface-container-highest after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+</label>
+</div>
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Quiet Hours</label>
+<div class="flex gap-4 items-center">
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-xl px-4 py-3 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_1px_#375BD2] max-w-[140px]">
+<input class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-body-md text-body-md" type="time" x-model="quietStart" @change.debounce="save"/>
+</div>
+<span class="text-on-surface-variant/50">to</span>
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-xl px-4 py-3 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_1px_#375BD2] max-w-[140px]">
+<input class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-body-md text-body-md" type="time" x-model="quietEnd" @change.debounce="save"/>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-4 pt-md border-t border-outline-variant/10">
+<button class="border border-outline-variant/30 text-on-surface px-5 py-2 rounded-xl font-label-sm text-label-sm hover:bg-surface-container-high transition-colors" type="button" @click="sendTest('email')">Send Test Email</button>
+<span x-show="testResult" x-text="testResult" class="text-on-surface-variant italic text-sm"></span>
+</div>
+</div>
+</template>
+</form>
+</div>
+<div class="glass-card rounded-2xl p-lg" id="budget-entries">
+<h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2 mb-lg">
+<span class="material-symbols-outlined text-yellow-500">savings</span> One-Time Budget Entries
+</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-md">Add bonuses, pay raises, or extra funds for specific pay cycles.</p>
+<form x-data="budgetEntryForm()" @submit.prevent="addBudgetEntry" class="mb-lg">
+<div class="grid grid-cols-4 gap-2">
+<div class="flex flex-col gap-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Amount</label>
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_1px_#375BD2]">
+<input class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-body-md text-body-md" type="number" step="0.01" x-model="amount" placeholder="0.00" required/>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Date</label>
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_1px_#375BD2]">
+<input class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-body-md text-body-md" type="date" x-model="effectiveDate" required/>
+</div>
+</div>
+<div class="flex flex-col gap-1 col-span-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Label</label>
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_1px_#375BD2]">
+<input class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-body-md text-body-md" type="text" x-model="label" placeholder="e.g. Year-end Bonus"/>
+</div>
+</div>
+</div>
+<button class="bg-primary text-on-primary px-6 py-2 rounded-xl font-label-md hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-primary/20 mt-md flex items-center gap-2 ml-auto" type="submit">
+<span class="material-symbols-outlined text-[18px]">add</span> Add Entry
+</button>
+</form>
+<div class="flex flex-col gap-2">
+{{range $budgetEntries}}
+<div class="tonal-layer-1 p-md rounded-xl flex items-center justify-between gap-md" id="be-{{.ID}}">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-yellow-500 text-[20px]">payments</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface">{{.Label}}</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">{{printf "%.2f" .Amount}} &middot; {{.EffectiveDate}}</p>
+</div>
+</div>
+<button class="text-red-400 hover:text-red-300 transition-colors p-1 rounded-lg hover:bg-red-400/10" onclick="deleteBudgetEntry({{.ID}})">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+{{else}}
+<div class="flex flex-col items-center justify-center py-lg text-center">
+<span class="material-symbols-outlined text-3xl text-on-surface-variant mb-2">savings</span>
+<p class="font-body-md text-body-md text-on-surface-variant">No bonus entries yet.</p>
+</div>
+{{end}}
+</div>
+<div class="glass-card rounded-2xl p-lg" id="background-settings">
+<h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2 mb-lg">
+<span class="material-symbols-outlined text-sky-400">wallpaper</span> Background
+</h3>
+<form x-data="bgForm()" @submit.prevent="save" class="flex flex-col gap-md">
+<div class="flex flex-col gap-3">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Mode</label>
+<div class="flex flex-wrap gap-2">
+<template x-for="m in ['solid', 'gradient', 'image']" :key="m">
+<button type="button" class="px-4 py-2 rounded-full border transition-all font-label-md text-label-md capitalize"
+:class="mode === m ? 'bg-white text-black border-white' : 'border-outline-variant/30 text-on-surface hover:border-primary'"
+x-text="m"
+@click="mode = m"></button>
+</template>
+</div>
+</div>
+<template x-if="mode === 'solid'">
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Color</label>
+<div class="flex items-center gap-3">
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-xl px-4 py-3 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_1px_#375BD2] flex items-center gap-3">
+<input class="bg-transparent border-none focus:ring-0 text-on-surface font-body-lg text-body-lg" type="color" x-model="value" style="width:40px;height:40px;padding:2px;cursor:pointer;border-radius:8px;"/>
+<span class="font-body-md text-body-md text-on-surface-variant font-mono" x-text="value"></span>
+</div>
+</div>
+</div>
+</template>
+<template x-if="mode === 'gradient'">
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">CSS Gradient</label>
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-xl px-4 py-3 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_1px_#375BD2]">
+<input class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-body-md text-body-md font-mono" type="text" x-model="value" placeholder="linear-gradient(135deg, #0A0B0D, #1a1a2e)"/>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant/60 mt-1">Use any valid CSS <code class="text-primary">background</code> value.</p>
+</div>
+</template>
+<template x-if="mode === 'image'">
+<div class="flex flex-col gap-3">
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Image URL</label>
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-xl px-4 py-3 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_1px_#375BD2]">
+<input class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-body-md text-body-md" type="url" x-model="value" placeholder="https://images.unsplash.com/photo-..."/>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Overlay Opacity: <span class="text-primary font-semibold" x-text="overlay"></span></label>
+<input type="range" min="0" max="1" step="0.05" x-model="overlay" class="w-full h-2 rounded-full appearance-none bg-surface-container-highest cursor-pointer accent-primary"/>
+<div class="flex justify-between text-[10px] text-on-surface-variant/40">
+<span>Transparent</span>
+<span>Opaque</span>
+</div>
+</div>
+</div>
+</template>
+<div class="flex justify-between items-center pt-md border-t border-outline-variant/10">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg ring-1 ring-white/10" :style="'background: ' + (mode === 'solid' ? value : mode === 'gradient' ? value : 'url(' + value + ') center/cover')"></div>
+<span class="font-label-sm text-label-sm text-on-surface-variant/60">Preview</span>
+</div>
+<button class="bg-primary text-on-primary px-6 py-2 rounded-xl font-label-md text-label-md hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-primary/20" type="submit">Save Background</button>
+</div>
+</form>
+</div>
+</div>
+</section>
+</div>
 <script>
 function settingsForm() {
     return {
@@ -372,6 +519,22 @@ function budgetEntryForm() {
 }
 function deleteBudgetEntry(id) {
     if(confirm('Delete this entry?')) fetch('/api/budget-entries/'+id, {method:'DELETE'}).then(r => { if(r.ok) location.reload(); });
+}
+function bgForm() {
+    return {
+        mode: '{{index .Settings "background_mode"}}',
+        value: '{{index .Settings "background_value"}}',
+        overlay: '{{index .Settings "background_overlay"}}',
+        save() {
+            fetch('/api/settings', { method:'PUT', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({
+                    background_mode: this.mode,
+                    background_value: this.value,
+                    background_overlay: this.overlay,
+                })
+            }).then(r => { if(r.ok) { location.reload(); } });
+        }
+    };
 }
 </script>
 {{template "footer" .}}

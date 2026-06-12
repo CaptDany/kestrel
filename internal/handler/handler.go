@@ -35,13 +35,15 @@ func (h *Handler) SetTracker(t *tracker.Tracker) {
 }
 
 type pageData struct {
-	Title string
-	Data  interface{}
-	Error string
+	Title    string
+	Data     interface{}
+	Error    string
+	Settings map[string]string
 }
 
 func (h *Handler) render(w http.ResponseWriter, name string, data pageData) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	data.Settings, _ = db.GetAllSettings()
 	if err := h.tpl.ExecuteTemplate(w, name, data); err != nil {
 		log.Printf("render error: %v", err)
 		http.Error(w, "Internal error", 500)
