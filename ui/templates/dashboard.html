@@ -271,15 +271,15 @@ document.body.addEventListener('htmx:afterRequest', function(evt) {
   if (evt.target.id === 'scrape-result' && evt.detail.successful) {
     var data = JSON.parse(evt.detail.xhr.responseText);
     document.getElementById('scrape-result').innerHTML =
-      '<div class="glass-card p-md rounded-xl mt-3"><div class="flex items-center gap-3 mb-3"><div class="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center"><span class="material-symbols-outlined text-primary">check</span></div><div><p class="font-body-sm text-body-sm text-white font-semibold">' + (data.title || 'Unknown') + '</p><p class="font-label-sm text-label-sm text-on-surface-variant">' + (data.price ? data.price + ' ' + data.currency : 'Could not detect') + '</p></div></div><button class="w-full bg-primary-container text-on-primary-container py-2 rounded-lg font-label-md text-label-md hover:brightness-110 transition-all" onclick="addItemFromScrape(\'' + data.url.replace(/'/g, "\\'") + '\', \'' + (data.title||'').replace(/'/g, "\\'") + '\', ' + (data.price || 'null') + ', \'' + (data.currency || 'USD') + '\')">Add to List</button></div>';
+      '<div class="glass-card p-md rounded-xl mt-3"><div class="flex items-center gap-3 mb-3">' + (data.image_url ? '<div class="w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-surface-container-high"><img src="' + data.image_url.replace(/'/g, "\\'") + '" alt="" class="w-full h-full object-cover" onerror="this.style.display=\'none\'"/></div>' : '<div class="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-primary">check</span></div>') + '<div class="min-w-0"><p class="font-body-sm text-body-sm text-white font-semibold truncate">' + (data.title || 'Unknown') + '</p><p class="font-label-sm text-label-sm text-on-surface-variant">' + (data.price ? '$' + parseFloat(data.price).toFixed(2) + ' ' + data.currency : 'Could not detect price') + '</p></div></div><button class="w-full bg-primary-container text-on-primary-container py-2 rounded-lg font-label-md text-label-md hover:brightness-110 transition-all" onclick="addItemFromScrape(\'' + data.url.replace(/'/g, "\\'") + '\', \'' + (data.title||'').replace(/'/g, "\\'") + '\', ' + (data.price || 'null') + ', \'' + (data.currency || 'USD') + '\', \'' + (data.image_url || '').replace(/'/g, "\\'") + '\')">Add to List</button></div>';
   }
   if (evt.target.id === 'plan-msg' && evt.detail.successful) {
     document.getElementById('plan-msg').innerHTML = '<div class="bg-primary/10 text-primary px-md py-2 rounded-lg text-sm mt-2 flex items-center gap-2"><span class="material-symbols-outlined text-sm">check_circle</span>Plan regenerated!</div>';
     setTimeout(function() { location.reload(); }, 1000);
   }
 });
-function addItemFromScrape(url, title, price, currency) {
-  fetch('/api/items', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url:url, title:title, price:price, currency:currency, price_confirmed: price!==null?1:0}) })
+function addItemFromScrape(url, title, price, currency, image_url) {
+  fetch('/api/items', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url:url, title:title, price:price, currency:currency, price_confirmed: price!==null?1:0, image_url: image_url||''}) })
   .then(function(r) { if (r.ok) { document.getElementById('scrape-result').innerHTML = '<div class="bg-emerald-500/10 text-emerald-500 px-md py-2 rounded-lg text-sm mt-2 flex items-center gap-2"><span class="material-symbols-outlined text-sm">check_circle</span>Item added!</div>'; setTimeout(function() { location.reload(); }, 800); } });
 }
 </script>

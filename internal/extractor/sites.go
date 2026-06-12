@@ -25,6 +25,13 @@ func (a *amazonParser) Extract(rawURL string) (*Result, error) {
 	res := &Result{URL: rawURL}
 
 	res.Title = strings.TrimSpace(doc.Find("#productTitle").Text())
+	res.ImageURL, _ = doc.Find("#landingImage").Attr("src")
+	if res.ImageURL == "" {
+		res.ImageURL, _ = doc.Find("#imgTagWrapperId img").Attr("src")
+	}
+	if res.ImageURL == "" {
+		res.ImageURL = doc.Find(`meta[property="og:image"]`).AttrOr("content", "")
+	}
 
 	whole := strings.TrimSpace(doc.Find(".a-price-whole").First().Text())
 	fraction := strings.TrimSpace(doc.Find(".a-price-fraction").First().Text())
@@ -45,6 +52,18 @@ func (a *amazonParser) Extract(rawURL string) (*Result, error) {
 
 	if res.Price == nil {
 		extractMeta(doc, res)
+	}
+
+	if res.Price == nil {
+		sym := strings.TrimSpace(doc.Find(".a-price-symbol").First().Text())
+		if sym != "" {
+			priceStr := strings.TrimSpace(doc.Find(".a-offscreen").First().Text())
+			priceStr = strings.TrimPrefix(priceStr, sym)
+			priceStr = strings.ReplaceAll(priceStr, ",", "")
+			if p, err := strconv.ParseFloat(priceStr, 64); err == nil {
+				res.Price = &p
+			}
+		}
 	}
 
 	res.Currency = detectCurrency(rawURL)
@@ -69,6 +88,8 @@ func (m *mercadolibreParser) Extract(rawURL string) (*Result, error) {
 	if res.Title == "" {
 		res.Title = strings.TrimSpace(doc.Find(`meta[property="og:title"]`).AttrOr("content", ""))
 	}
+
+	res.ImageURL = doc.Find(`meta[property="og:image"]`).AttrOr("content", "")
 
 	p, c := extractJSONLD(doc)
 	if p != nil {
@@ -121,6 +142,8 @@ func (a *aliexpressParser) Extract(rawURL string) (*Result, error) {
 		res.Title = strings.TrimSpace(doc.Find("title").Text())
 	}
 
+	res.ImageURL = doc.Find(`meta[property="og:image"]`).AttrOr("content", "")
+
 	html, _ := doc.Html()
 	if match := aliexpressPriceRe.FindStringSubmatch(html); len(match) > 1 {
 		if p, err := strconv.ParseFloat(match[1], 64); err == nil {
@@ -158,6 +181,8 @@ func (i *ikeaParser) Extract(rawURL string) (*Result, error) {
 		res.Title = strings.TrimSpace(doc.Find("title").Text())
 	}
 
+	res.ImageURL = doc.Find(`meta[property="og:image"]`).AttrOr("content", "")
+
 	p, c := extractJSONLD(doc)
 	if p != nil {
 		res.Price = p
@@ -192,6 +217,8 @@ func (w *walmartParser) Extract(rawURL string) (*Result, error) {
 	if res.Title == "" {
 		res.Title = strings.TrimSpace(doc.Find("title").Text())
 	}
+
+	res.ImageURL = doc.Find(`meta[property="og:image"]`).AttrOr("content", "")
 
 	p, c := extractJSONLD(doc)
 	if p != nil {
@@ -241,6 +268,8 @@ func (g *genericParser) Extract(rawURL string) (*Result, error) {
 	if res.Title == "" {
 		res.Title = strings.TrimSpace(doc.Find("title").Text())
 	}
+
+	res.ImageURL = doc.Find(`meta[property="og:image"]`).AttrOr("content", "")
 
 	p, c := extractJSONLD(doc)
 	if p != nil {

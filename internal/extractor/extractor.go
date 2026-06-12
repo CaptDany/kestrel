@@ -6,6 +6,7 @@ type Result struct {
 	Title    string   `json:"title"`
 	Price    *float64 `json:"price"`
 	Currency string   `json:"currency"`
+	ImageURL string   `json:"image_url"`
 	URL      string   `json:"url"`
 }
 

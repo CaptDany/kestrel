@@ -48,7 +48,8 @@ func migrate() error {
 		created_at TEXT NOT NULL DEFAULT (datetime('now')),
 		updated_at TEXT NOT NULL DEFAULT (datetime('now')),
 		purchased_at TEXT,
-		price_confirmed INTEGER NOT NULL DEFAULT 0
+		price_confirmed INTEGER NOT NULL DEFAULT 0,
+		image_url TEXT NOT NULL DEFAULT ''
 	);
 
 	CREATE TABLE IF NOT EXISTS paydays (
@@ -129,6 +130,16 @@ func migrate() error {
 	if _, err := DB.Exec(schema); err != nil {
 		return fmt.Errorf("exec schema: %w", err)
 	}
+
+	migrations := []string{
+		`ALTER TABLE items ADD COLUMN image_url TEXT NOT NULL DEFAULT ''`,
+	}
+	for _, m := range migrations {
+		if _, err := DB.Exec(m); err != nil {
+			// column may already exist on fresh installs, ignore
+		}
+	}
+
 	log.Println("database migrated successfully")
 	return nil
 }

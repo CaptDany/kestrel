@@ -15,6 +15,7 @@ type Item struct {
 	UpdatedAt      string   `json:"updated_at"`
 	PurchasedAt    *string  `json:"purchased_at"`
 	PriceConfirmed int      `json:"price_confirmed"`
+	ImageURL       string   `json:"image_url"`
 }
 
 type Payday struct {

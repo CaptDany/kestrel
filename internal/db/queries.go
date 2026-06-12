@@ -8,7 +8,7 @@ import (
 // ─── Items ──────────────────────────────────────────────────────────────────
 
 func GetItems(status string) ([]Item, error) {
-	query := "SELECT id, url, title, price, currency, priority, category, notes, status, desired_date, created_at, updated_at, purchased_at, price_confirmed FROM items"
+	query := "SELECT id, url, title, price, currency, priority, category, notes, status, desired_date, created_at, updated_at, purchased_at, price_confirmed, image_url FROM items"
 	args := []interface{}{}
 	if status != "" {
 		query += " WHERE status = ?"
@@ -19,7 +19,7 @@ func GetItems(status string) ([]Item, error) {
 }
 
 func GetItem(id int64) (*Item, error) {
-	items, err := scanItems("SELECT id, url, title, price, currency, priority, category, notes, status, desired_date, created_at, updated_at, purchased_at, price_confirmed FROM items WHERE id = ?", id)
+	items, err := scanItems("SELECT id, url, title, price, currency, priority, category, notes, status, desired_date, created_at, updated_at, purchased_at, price_confirmed, image_url FROM items WHERE id = ?", id)
 	if err != nil {
 		return nil, err
 	}
@@ -31,10 +31,11 @@ func GetItem(id int64) (*Item, error) {
 
 func CreateItem(item *Item) (int64, error) {
 	res, err := DB.Exec(
-		`INSERT INTO items (url, title, price, currency, priority, category, notes, status, desired_date, price_confirmed)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		`INSERT INTO items (url, title, price, currency, priority, category, notes, status, desired_date, price_confirmed, image_url)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		item.URL, item.Title, item.Price, item.Currency, item.Priority,
 		item.Category, item.Notes, item.Status, item.DesiredDate, item.PriceConfirmed,
+		item.ImageURL,
 	)
 	if err != nil {
 		return 0, fmt.Errorf("create item: %w", err)
@@ -45,11 +46,11 @@ func CreateItem(item *Item) (int64, error) {
 func UpdateItem(item *Item) error {
 	_, err := DB.Exec(
 		`UPDATE items SET url=?, title=?, price=?, currency=?, priority=?, category=?,
-		 notes=?, status=?, desired_date=?, price_confirmed=?, updated_at=datetime('now')
+		 notes=?, status=?, desired_date=?, price_confirmed=?, image_url=?, updated_at=datetime('now')
 		 WHERE id=?`,
 		item.URL, item.Title, item.Price, item.Currency, item.Priority,
 		item.Category, item.Notes, item.Status, item.DesiredDate, item.PriceConfirmed,
-		item.ID,
+		item.ImageURL, item.ID,
 	)
 	return err
 }
@@ -108,7 +109,7 @@ func scanItems(query string, args ...interface{}) ([]Item, error) {
 			&it.ID, &it.URL, &it.Title, &it.Price, &it.Currency,
 			&it.Priority, &it.Category, &it.Notes, &it.Status,
 			&it.DesiredDate, &it.CreatedAt, &it.UpdatedAt,
-			&it.PurchasedAt, &it.PriceConfirmed,
+			&it.PurchasedAt, &it.PriceConfirmed, &it.ImageURL,
 		); err != nil {
 			return nil, fmt.Errorf("scan item: %w", err)
 		}
