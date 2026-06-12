@@ -20,7 +20,7 @@
 <div class="flex items-baseline gap-2">
 <span class="font-headline-lg text-headline-lg text-primary">{{index $settings "budget_amount"}} {{index $settings "currency"}}</span>
 </div>
-<div class="mt-2 text-xs text-on-surface-variant">Mode: {{index $settings "budget_mode"}}</div>
+<div class="mt-2 text-xs text-on-surface-variant">Mode: {{labelize (index $settings "budget_mode")}}</div>
 </div>
 <div class="tonal-layer-1 p-lg rounded-xl">
 <span class="font-label-md text-on-surface-variant block mb-sm">Scheduled Items</span>
@@ -32,9 +32,9 @@
 <div class="tonal-layer-1 p-lg rounded-xl">
 <span class="font-label-md text-on-surface-variant block mb-sm">Sort Criteria</span>
 <div class="flex items-baseline gap-2">
-<span class="font-headline-md text-headline-md text-tertiary">{{index $settings "sort_criteria"}}</span>
+<span class="font-headline-md text-headline-md text-tertiary">{{labelize (index $settings "sort_criteria")}}</span>
 </div>
-<div class="mt-2 text-xs text-on-surface-variant">Purchase mode: {{index $settings "purchase_mode"}}</div>
+<div class="mt-2 text-xs text-on-surface-variant">Purchase mode: {{labelize (index $settings "purchase_mode")}}</div>
 </div>
 </section>
 {{if $plan}}

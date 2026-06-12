@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 
 	"github.com/CaptDany/kestrel/internal/config"
@@ -59,6 +60,18 @@ func main() {
 		},
 		"sub": func(a, b float64) float64 {
 			return a - b
+		},
+		"labelize": func(s string) string {
+			if s == "" {
+				return ""
+			}
+			words := strings.Split(s, "_")
+			for i, w := range words {
+				if len(w) > 0 {
+					words[i] = strings.ToUpper(w[:1]) + strings.ToLower(w[1:])
+				}
+			}
+			return strings.Join(words, " ")
 		},
 	}
 

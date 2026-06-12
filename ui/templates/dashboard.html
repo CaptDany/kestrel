@@ -248,7 +248,7 @@
 <div class="space-y-3">
 <div class="flex items-center justify-between p-3 bg-surface-container-high rounded-lg">
 <span class="text-xs text-on-surface-variant">Mode</span>
-<span class="text-xs text-white font-semibold">{{index $settings "budget_mode"}}</span>
+<span class="text-xs text-white font-semibold">{{labelize (index $settings "budget_mode")}}</span>
 </div>
 <div class="flex items-center justify-between p-3 bg-surface-container-high rounded-lg">
 <span class="text-xs text-on-surface-variant">Amount</span>
@@ -256,11 +256,11 @@
 </div>
 <div class="flex items-center justify-between p-3 bg-surface-container-high rounded-lg">
 <span class="text-xs text-on-surface-variant">Sort</span>
-<span class="text-xs text-white font-semibold">{{index $settings "sort_criteria"}}</span>
+<span class="text-xs text-white font-semibold">{{labelize (index $settings "sort_criteria")}}</span>
 </div>
 <div class="flex items-center justify-between p-3 bg-surface-container-high rounded-lg">
 <span class="text-xs text-on-surface-variant">Purchase Mode</span>
-<span class="text-xs text-white font-semibold">{{index $settings "purchase_mode"}}</span>
+<span class="text-xs text-white font-semibold">{{labelize (index $settings "purchase_mode")}}</span>
 </div>
 </div>
 </div>
