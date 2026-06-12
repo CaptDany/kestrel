@@ -96,4 +96,7 @@ var defaultSettings = map[string]string{
 	"tracker_interval_seconds":    "3600",
 	"tracker_drop_threshold_pct":  "5",
 	"tracker_drop_threshold_abs":  "0",
+	"background_mode":    "solid",
+	"background_value":   "#0A0B0D",
+	"background_overlay": "0.6",
 }

@@ -12,12 +12,45 @@ tr.htmx-swapping {
     opacity: 0;
     transition: opacity 200ms ease-out;
 }
-.navbar {
-    border-bottom: 1px solid hsl(0, 0%, 21%);
+.htmx-settling {
+    opacity: 0;
 }
-.table th {
-    white-space: nowrap;
+.htmx-added {
+    opacity: 0;
 }
-.box {
-    height: 100%;
+[x-cloak] {
+    display: none !important;
+}
+.fill-icon {
+    font-variation-settings: 'FILL' 1;
+}
+.glass-card {
+    background: rgba(18, 19, 26, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+.tonal-layer-1 {
+    background: rgba(55, 91, 210, 0.08);
+}
+::-webkit-scrollbar {
+    width: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.7);
+    cursor: pointer;
+}
+input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.7);
+    cursor: pointer;
 }
