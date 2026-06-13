@@ -8,7 +8,8 @@
             name="viewport"
         />
         <title>Kestrel | {{.Title}}</title>
-        <link rel="icon" type="image/svg+xml" href="/static/logo/favicon.svg" />
+        <link rel="icon" type="image/svg+xml" href="/static/logo/logotype-dark-nobg.svg" media="(prefers-color-scheme: light)" />
+        <link rel="icon" type="image/svg+xml" href="/static/logo/logotype-light-nobg.svg" media="(prefers-color-scheme: dark)" />
         <link rel="manifest" href="/manifest.json" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta
@@ -106,14 +107,14 @@
                             "container-margin-mobile": "16px",
                         },
                         fontFamily: {
-                            "headline-md": ["Inter"],
-                            "headline-lg": ["Inter"],
-                            "label-sm": ["Inter"],
-                            "display-lg": ["Inter"],
-                            "headline-lg-mobile": ["Inter"],
-                            "body-sm": ["Inter"],
-                            "label-md": ["Inter"],
-                            "body-lg": ["Inter"],
+                            "headline-md": ["Gaya", "Inter"],
+                            "headline-lg": ["Gaya", "Inter"],
+                            "label-sm": ["Futura", "Inter"],
+                            "display-lg": ["Gaya", "Inter"],
+                            "headline-lg-mobile": ["Gaya", "Inter"],
+                            "body-sm": ["Futura", "Inter"],
+                            "label-md": ["Futura", "Inter"],
+                            "body-lg": ["Futura", "Inter"],
                         },
                         fontSize: {
                             "headline-md": [
@@ -171,16 +172,28 @@
             {{$bgOverlay := index .Settings "background_overlay"}}
             {{if eq $bgMode "image"}}
             html { background: #0A0B0D; }
-            body { background: transparent; color: #e2e1ec; font-family: 'Inter', sans-serif; }
+            body { background: transparent; color: #e2e1ec; font-family: 'Futura', 'Inter', sans-serif; }
             #bg-image { position: fixed; inset: 0; z-index: -2; background: url('{{$bgValue}}') center/cover; pointer-events: none; }
             #bg-image::after { content: ''; position: fixed; inset: 0; background: rgba(0,0,0,{{$bgOverlay}}); pointer-events: none; }
             {{else if eq $bgMode "gradient"}}
             html { background: {{$bgValue | safeCSS}}; }
-            body { background: {{$bgValue | safeCSS}}; color: #e2e1ec; font-family: 'Inter', sans-serif; }
+            body { background: {{$bgValue | safeCSS}}; color: #e2e1ec; font-family: 'Futura', 'Inter', sans-serif; }
             {{else}}
             html { background: {{$bgValue | safeCSS}}; }
-            body { background-color: {{$bgValue | safeCSS}}; color: #e2e1ec; font-family: 'Inter', sans-serif; }
+            body { background-color: {{$bgValue | safeCSS}}; color: #e2e1ec; font-family: 'Futura', 'Inter', sans-serif; }
             {{end}}
+            @font-face { font-family: 'Gaya'; src: url('/static/fonts/Gaya-Demo-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+            @font-face { font-family: 'Gaya'; src: url('/static/fonts/Gaya-Demo-Italic.ttf') format('truetype'); font-weight: 400; font-style: italic; font-display: swap; }
+            @font-face { font-family: 'Futura'; src: url('/static/fonts/Futura100-Light.otf') format('opentype'); font-weight: 300; font-style: normal; font-display: swap; }
+            @font-face { font-family: 'Futura'; src: url('/static/fonts/Futura100-LightOblique.otf') format('opentype'); font-weight: 300; font-style: italic; font-display: swap; }
+            @font-face { font-family: 'Futura'; src: url('/static/fonts/Futura100-Regular.otf') format('opentype'); font-weight: 400; font-style: normal; font-display: swap; }
+            @font-face { font-family: 'Futura'; src: url('/static/fonts/Futura100-Oblique.otf') format('opentype'); font-weight: 400; font-style: italic; font-display: swap; }
+            @font-face { font-family: 'Futura'; src: url('/static/fonts/Futura100-Medium.otf') format('opentype'); font-weight: 500; font-style: normal; font-display: swap; }
+            @font-face { font-family: 'Futura'; src: url('/static/fonts/Futura100-MediumOblique.otf') format('opentype'); font-weight: 500; font-style: italic; font-display: swap; }
+            @font-face { font-family: 'Futura'; src: url('/static/fonts/Futura100-Demibold.otf') format('opentype'); font-weight: 600; font-style: normal; font-display: swap; }
+            @font-face { font-family: 'Futura'; src: url('/static/fonts/Futura100-DemiboldOblique.otf') format('opentype'); font-weight: 600; font-style: italic; font-display: swap; }
+            @font-face { font-family: 'Futura'; src: url('/static/fonts/Futura100-Bold.otf') format('opentype'); font-weight: 700; font-style: normal; font-display: swap; }
+            @font-face { font-family: 'Futura'; src: url('/static/fonts/Futura100-BoldOblique.otf') format('opentype'); font-weight: 700; font-style: italic; font-display: swap; }
             .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
             .fill-icon { font-variation-settings: 'FILL' 1; }
             .glass-card { background: rgba(26, 27, 30, 0.8); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.04); transition: all 0.2s ease-in-out; }
@@ -288,7 +301,7 @@
                 class="fixed left-0 top-0 h-screen w-[240px] glass-nav flex-col gap-lg p-md hidden md:flex z-50 border-r border-outline-variant/10"
             >
                 <div class="flex items-center gap-sm px-2">
-                    <img src="/static/logo/kestrel.svg" alt="" class="h-7" />
+                    <img src="/static/logo/imagotype-light.svg" alt="" class="h-7" />
                 </div>
                 <nav class="flex-1 flex flex-col gap-sm" id="sidebar-nav">
                     <a
@@ -358,7 +371,7 @@
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-sm">
                         <img
-                            src="/static/logo/kestrel.svg"
+                            src="/static/logo/imagotype-light.svg"
                             alt=""
                             class="h-6"
                         />
