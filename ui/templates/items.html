@@ -22,18 +22,21 @@
 <div class="glass-card rounded-xl p-lg flex flex-col gap-md relative group" id="item-{{.ID}}">
 <div class="flex justify-between items-start">
 <span class="bg-primary/10 text-primary px-3 py-1 rounded-full font-label-sm text-label-sm uppercase tracking-wider">{{if .Category}}{{.Category}}{{else}}General{{end}}</span>
-<div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<div class="flex items-center gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
 <a href="/items/{{.ID}}/edit" class="text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-[20px]">edit</span></a>
 <button class="text-on-surface-variant hover:text-error transition-colors" hx-delete="/api/items/{{.ID}}" hx-target="#item-{{.ID}}" hx-swap="outerHTML" hx-confirm="Delete this item?"><span class="material-symbols-outlined text-[20px]">delete</span></button>
 </div>
 </div>
+{{if .ImageURL}}
+<div class="-mx-lg -mt-lg mb-3 h-44 rounded-t-xl overflow-hidden bg-surface-container-high">
+<img src="{{.ImageURL}}" alt="{{.Title}}" class="w-full h-full object-cover" onerror="this.style.display='none'"/>
+</div>
+{{end}}
 <div class="flex flex-col gap-xs mt-2">
 <a href="{{.URL}}" target="_blank" rel="noopener" class="font-headline-md text-headline-md hover:text-primary transition-colors {{if eq .Status "purchased"}}line-through text-on-surface-variant{{end}}">{{.Title}}</a>
-<p class="font-display-lg text-headline-lg text-primary">{{if .Price}}{{printf "$%.2f" .Price}}{{else}}—{{end}}</p>
+<p class="font-display-lg text-headline-lg text-primary">{{if .Price}}{{printf "$%.2f" (deref .Price)}}{{else}}—{{end}}</p>
 </div>
-<div class="flex items-center gap-1 text-tertiary priority-stars" data-priority="{{.Priority}}">
-<span class="ml-2 font-label-sm text-label-sm text-on-surface-variant">Priority {{.Priority}}</span>
-</div>
+<div class="flex items-center gap-1 text-tertiary priority-stars" data-priority="{{.Priority}}"></div>
 <div class="grid grid-cols-2 gap-md mt-2 p-md bg-surface-container-lowest rounded-lg border border-outline-variant/10">
 <div>
 <p class="font-label-sm text-label-sm text-on-surface-variant uppercase">Desired Date</p>
@@ -126,15 +129,11 @@
   });
   document.querySelectorAll('.priority-stars').forEach(function(el) {
     var p = parseInt(el.getAttribute('data-priority')) || 0;
+    var filled = Math.max(0, Math.min(5, p));
     var html = '';
-    var filled = 0;
-    if (p >= 1 && p <= 5) { filled = p; }
-    else if (p === 1) { filled = 5; }
-    else if (p === 0) { filled = 3; }
-    else { filled = 1; }
     for (var i = 0; i < filled; i++) { html += '<span class="material-symbols-outlined fill-icon text-[18px]">star</span>'; }
     for (var i = filled; i < 5; i++) { html += '<span class="material-symbols-outlined text-[18px] text-on-surface-variant/30">star</span>'; }
-    el.innerHTML = html + el.innerHTML;
+    el.innerHTML = html;
   });
 })();
 document.addEventListener('alpine:init', function() {
