@@ -61,6 +61,15 @@ func main() {
 		"sub": func(a, b float64) float64 {
 			return a - b
 		},
+		"mul": func(a, b float64) float64 {
+			return a * b
+		},
+		"div": func(a, b float64) float64 {
+			if b == 0 {
+				return 0
+			}
+			return a / b
+		},
 		"labelize": func(s string) string {
 			if s == "" {
 				return ""
