@@ -458,7 +458,7 @@ document.addEventListener('alpine:init', function() {
           body: JSON.stringify({url: url})
         }).then(function(r) {
           if (r.ok) return r.json();
-          throw new Error('Scrape failed');
+          return r.json().then(function(e) { throw new Error(e.error || 'Scrape failed'); });
         }).then(function(data) {
           this.scraping = false;
           this.url = data.url;
