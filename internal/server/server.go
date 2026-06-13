@@ -85,6 +85,10 @@ func New(addr string, tpl *template.Template, staticFS http.FileSystem) *Server 
 		http.FileServer(staticFS).ServeHTTP(w, r)
 	})
 
+	fsrv := http.FileServer(staticFS)
+	s.Router.Get("/manifest.json", fsrv.ServeHTTP)
+	s.Router.Get("/sw.js", fsrv.ServeHTTP)
+
 	s.Router.Get("/", s.Handler.Dashboard)
 	s.Router.Get("/items", s.Handler.ItemsPage)
 	s.Router.Get("/items/new", s.Handler.ItemNew)

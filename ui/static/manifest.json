@@ -1,0 +1,19 @@
+{
+  "name": "Kestrel — Purchase Planner",
+  "short_name": "Kestrel",
+  "description": "Calendarize your e-commerce purchases based on paydays and budget.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#12131a",
+  "theme_color": "#375bd2",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/static/logo/kestrel.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any monochrome"
+    }
+  ],
+  "categories": ["productivity", "finance", "shopping"]
+}

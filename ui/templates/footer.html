@@ -42,6 +42,7 @@
     card.addEventListener('mouseleave', function() { this.style.borderColor = 'rgba(255,255,255,0.04)'; });
   });
 })();
+if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js'); }
 </script>
 </div>
 </body>
