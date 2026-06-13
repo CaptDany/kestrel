@@ -9,9 +9,15 @@
 <h2 class="font-headline-lg text-headline-lg text-on-surface">Overview</h2>
 <p class="font-body-lg text-body-lg text-on-surface-variant">Your automated spending roadmap.</p>
 </div>
+                <div class="flex items-center gap-2">
+                <button class="text-on-surface-variant hover:text-primary transition-colors active:scale-95 relative p-2" @click="$store.notif.toggle()">
+                  <span class="material-symbols-outlined">notifications</span>
+                  <span x-show="$store.notif.unread > 0" x-text="$store.notif.unread" class="absolute -top-0.5 -right-0.5 bg-primary text-on-primary text-[9px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-1 border-2 border-surface" style="display:none"></span>
+                </button>
                 <div class="flex items-center gap-2 bg-surface-container-high p-1 rounded-lg">
                     <a href="?view=weekly" class="px-4 py-1.5 rounded-md font-semibold text-xs transition-all {{if eq $data.currentView "weekly"}}bg-white text-black{{else}}text-on-surface-variant hover:text-white{{end}}">WEEKLY</a>
                     <a href="?view=monthly" class="px-4 py-1.5 rounded-md font-semibold text-xs transition-all {{if or (eq $data.currentView "monthly") (eq $data.currentView "")}}bg-white text-black{{else}}text-on-surface-variant hover:text-white{{end}}">MONTHLY</a>
+                </div>
                 </div>
 </header>
 <section class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-md mb-xl">
