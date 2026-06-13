@@ -1,24 +1,20 @@
 {{define "footer"}}
 </main>
 <nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 h-16 md:hidden bg-surface-container border-t border-outline-variant/20 shadow-md rounded-t-xl" id="bottom-nav">
-<a class="nav-link flex flex-col items-center justify-center text-on-surface-variant p-2" href="/">
-<span class="material-symbols-outlined">dashboard</span>
+<a class="nav-link flex flex-col items-center justify-center py-1 px-3 text-on-surface-variant hover:bg-surface-container-high transition-all rounded-xl" href="/">
+<span class="material-symbols-outlined text-[24px]">dashboard</span>
 <span class="font-label-sm text-label-sm">Home</span>
 </a>
-<a class="nav-link flex flex-col items-center justify-center text-on-surface-variant p-2" href="/items">
-<span class="material-symbols-outlined">inventory_2</span>
+<a class="nav-link flex flex-col items-center justify-center py-1 px-3 text-on-surface-variant hover:bg-surface-container-high transition-all rounded-xl" href="/items">
+<span class="material-symbols-outlined text-[24px]">inventory_2</span>
 <span class="font-label-sm text-label-sm">Items</span>
 </a>
-<a class="nav-link flex flex-col items-center justify-center text-on-surface-variant p-2" href="/schedule">
-<span class="material-symbols-outlined">calendar_today</span>
+<a class="nav-link flex flex-col items-center justify-center py-1 px-3 text-on-surface-variant hover:bg-surface-container-high transition-all rounded-xl" href="/schedule">
+<span class="material-symbols-outlined text-[24px]">calendar_today</span>
 <span class="font-label-sm text-label-sm">Schedule</span>
 </a>
-<a class="nav-link flex flex-col items-center justify-center text-on-surface-variant p-2" href="/history">
-<span class="material-symbols-outlined">receipt_long</span>
-<span class="font-label-sm text-label-sm">History</span>
-</a>
-<a class="nav-link flex flex-col items-center justify-center text-on-surface-variant p-2" href="/settings">
-<span class="material-symbols-outlined">settings</span>
+<a class="nav-link flex flex-col items-center justify-center py-1 px-3 text-on-surface-variant hover:bg-surface-container-high transition-all rounded-xl" href="/settings">
+<span class="material-symbols-outlined text-[24px]">settings</span>
 <span class="font-label-sm text-label-sm">Settings</span>
 </a>
 </nav>
@@ -30,13 +26,15 @@
   links.forEach(function(a) {
     var href = a.getAttribute('href');
     if (href === path) {
-      a.classList.add('bg-surface-variant', 'text-primary', 'font-bold');
+      a.classList.add('bg-primary-container', 'text-on-primary-container');
       a.classList.remove('text-on-surface-variant');
+      a.querySelector('.material-symbols-outlined').style.fontVariationSettings = "'FILL' 1";
       activeFound = true;
     }
     if (!activeFound && path !== '/' && href !== '/' && path.startsWith(href)) {
-      a.classList.add('bg-surface-variant', 'text-primary', 'font-bold');
+      a.classList.add('bg-primary-container', 'text-on-primary-container');
       a.classList.remove('text-on-surface-variant');
+      a.querySelector('.material-symbols-outlined').style.fontVariationSettings = "'FILL' 1";
     }
   });
   document.querySelectorAll('.glass-card').forEach(function(card) {
