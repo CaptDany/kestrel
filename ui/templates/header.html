@@ -70,7 +70,7 @@ tailwind.config = {
         DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"
       },
       spacing: {
-        lg: "24px", xl: "32px", base: "4px", gutter: "16px", md: "16px", xs: "4px", sm: "8px",
+        lg: "24px", xl: "32px", base: "4px", gutter: "16px", md: "16px", xs: "4px", sm: "8px", 40: "40px",
         "container-margin-desktop": "40px",
         "container-margin-mobile": "16px"
       },
@@ -206,7 +206,7 @@ function confirmAction(msg, callback) { Alpine.store('confirm').fire(msg, callba
 </div>
 </div>
 </nav>
-<main class="flex-1 md:ml-[240px] p-container-margin-mobile md:p-container-margin-desktop min-h-screen pb-32 md:pb-xl w-full max-w-full pt-[68px] md:pt-0">
+<main class="flex-1 md:ml-[240px] p-container-margin-mobile md:p-40 min-h-screen pb-32 md:pb-xl w-full max-w-full pt-[68px] md:pt-0">
 <div x-data x-show="$store.toast.show" x-cloak class="fixed top-4 right-4 z-[200] max-w-sm w-full pointer-events-none" @click="$store.toast.show=false">
   <div class="pointer-events-auto glass-card rounded-xl px-lg py-md flex items-center gap-3 shadow-2xl" :class="$store.toast.type==='error'?'border-l-4 border-red-500':'border-l-4 border-emerald-500'" x-init="$el.classList.add('toast-enter')">
     <span class="material-symbols-outlined" :class="$store.toast.type==='error'?'text-red-400':'text-emerald-400'" x-text="$store.toast.type==='error'?'error':'check_circle'"></span>
