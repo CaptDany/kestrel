@@ -1,6 +1,7 @@
 package extractor
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"regexp"
@@ -390,12 +391,52 @@ func ExtractWishlist(rawURL string) ([]*Result, error) {
 		items.Each(func(_ int, s *goquery.Selection) {
 			r := &Result{}
 
-			link := s.Find("a[id^='itemName_'], a[class*='product-link'], h2 a").First()
+				link := s.Find("a[id^='itemName_'], a[class*='product-link'], h2 a, a[class*='item-name'], a[href*='/dp/']").First()
+			if link.Length() == 0 {
+				s.Find("a").Each(func(_ int, a *goquery.Selection) {
+					if link.Length() > 0 {
+						return
+					}
+					t := strings.TrimSpace(a.Text())
+					if t != "" && !strings.EqualFold(t, "Vista rápida") && !strings.EqualFold(t, "Quick view") {
+						link = a
+					}
+				})
+			}
 			if link.Length() == 0 {
 				link = s.Find("a").First()
 			}
-			r.Title = strings.TrimSpace(link.Text())
-			if href, ok := link.Attr("href"); ok && href != "" {
+
+			linkText := strings.TrimSpace(link.Text())
+			if linkText != "" && !strings.EqualFold(linkText, "Vista rápida") && !strings.EqualFold(linkText, "Quick view") {
+				r.Title = linkText
+			}
+			if r.Title == "" {
+				if label, exists := link.Attr("aria-label"); exists {
+					r.Title = strings.TrimSpace(label)
+				}
+			}
+			if r.Title == "" {
+				if title, exists := link.Attr("title"); exists {
+					r.Title = strings.TrimSpace(title)
+				}
+			}
+			if r.Title == "" {
+				img := s.Find("img[src*='images'], img[data-a-dynamic-image]").First()
+				if alt, exists := img.Attr("alt"); exists {
+					r.Title = strings.TrimSpace(alt)
+				}
+			}
+
+			var href string
+			var hasHref bool
+			if href, hasHref = link.Attr("href"); !hasHref || href == "" {
+				if l2 := s.Find("a[href*='/dp/']").First(); l2.Length() > 0 {
+					link = l2
+					href, hasHref = link.Attr("href")
+				}
+			}
+			if hasHref && href != "" {
 				if strings.HasPrefix(href, "http") {
 					r.URL = href
 				} else {
@@ -423,9 +464,42 @@ func ExtractWishlist(rawURL string) ([]*Result, error) {
 				priceText = strings.TrimSpace(s.Find(".a-price").First().Text())
 			}
 			if priceText == "" {
+				priceText = strings.TrimSpace(s.Find(".a-color-price").First().Text())
+			}
+			if priceText == "" {
+				if el := s.Find("[data-a-price]"); el.Length() > 0 {
+					if v, exists := el.Attr("data-a-price"); exists {
+						priceText = v
+					}
+				}
+			}
+			if priceText == "" {
+				if el := s.Find("[data-grid-add-to-cart]"); el.Length() > 0 {
+					if v, exists := el.Attr("data-grid-add-to-cart"); exists {
+						var data struct {
+							Price string `json:"price"`
+						}
+						if err := json.Unmarshal([]byte(v), &data); err == nil && data.Price != "" {
+							priceText = "$" + data.Price
+						}
+					}
+				}
+			}
+			if priceText == "" {
 				s.Find("span").Each(func(_ int, sp *goquery.Selection) {
 					t := strings.TrimSpace(sp.Text())
-					if strings.HasPrefix(t, "$") || strings.HasPrefix(t, "US$") {
+					if strings.HasPrefix(t, "$") || strings.HasPrefix(t, "US$") || strings.HasPrefix(t, "MXN") {
+						priceText = t
+					}
+				})
+			}
+			if priceText == "" {
+				s.Find("div, span").Each(func(_ int, el *goquery.Selection) {
+					if priceText != "" {
+						return
+					}
+					t := strings.TrimSpace(el.Text())
+					if matched, _ := regexp.MatchString(`^\$[\d,]+\.?\d*`, t); matched {
 						priceText = t
 					}
 				})
@@ -433,6 +507,7 @@ func ExtractWishlist(rawURL string) ([]*Result, error) {
 			if priceText != "" {
 				priceStr := strings.ReplaceAll(priceText, "$", "")
 				priceStr = strings.ReplaceAll(priceStr, ",", "")
+				priceStr = strings.TrimSpace(priceStr)
 				if match := priceRe.FindString(priceStr); match != "" {
 					if p, err := strconv.ParseFloat(match, 64); err == nil {
 						r.Price = &p

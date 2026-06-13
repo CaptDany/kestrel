@@ -1,331 +1,602 @@
 {{define "header"}}
-<!DOCTYPE html>
+<!doctype html>
 <html class="dark" lang="en">
-<head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
-<title>Kestrel | {{.Title}}</title>
-<link rel="icon" type="image/svg+xml" href="/static/logo/favicon.svg"/>
-<link rel="manifest" href="/manifest.json"/>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta name="apple-mobile-web-app-title" content="Kestrel"/>
-<meta name="mobile-web-app-capable" content="yes"/>
-<meta name="theme-color" content="#12131a"/>
-<meta name="tailwindcss-cdn" content="production"/>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<script src="https://unpkg.com/htmx.org@2.0.4"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
-<script>
-tailwind.config = {
-  darkMode: "class",
-  theme: {
-    extend: {
-      colors: {
-        "on-primary": "#002681",
-        "on-secondary-container": "#b9b8bc",
-        "on-primary-container": "#dde1ff",
-        "inverse-surface": "#e2e1ec",
-        "on-tertiary": "#552100",
-        "surface": "#12131a",
-        "inverse-on-surface": "#2f3038",
-        "surface-container-low": "#1a1b22",
-        "background": "#12131a",
-        "primary-fixed": "#dce1ff",
-        "on-tertiary-container": "#ffdccc",
-        "secondary-fixed": "#e3e2e6",
-        "tertiary-fixed-dim": "#ffb690",
-        "inverse-primary": "#2f54cb",
-        "on-primary-fixed": "#001551",
-        "on-surface-variant": "#c4c5d6",
-        "surface-variant": "#33343c",
-        "surface-container-highest": "#33343c",
-        "surface-bright": "#383941",
-        "secondary": "#c7c6ca",
-        "surface-container": "#1e1f27",
-        "surface-dim": "#12131a",
-        "on-error-container": "#ffdad6",
-        "on-background": "#e2e1ec",
-        "surface-container-high": "#282a31",
-        "tertiary-fixed": "#ffdbcb",
-        "on-surface": "#e2e1ec",
-        "error-container": "#93000a",
-        "tertiary": "#ffb690",
-        "surface-tint": "#b7c4ff",
-        "error": "#ffb4ab",
-        "secondary-fixed-dim": "#c7c6ca",
-        "on-secondary-fixed-variant": "#46474a",
-        "outline-variant": "#444654",
-        "on-tertiary-fixed": "#341100",
-        "primary": "#b7c4ff",
-        "on-primary-fixed-variant": "#0439b3",
-        "outline": "#8e909f",
-        "on-error": "#690005",
-        "on-secondary": "#2f3033",
-        "secondary-container": "#48494c",
-        "on-tertiary-fixed-variant": "#783100",
-        "surface-container-lowest": "#0c0e15",
-        "tertiary-container": "#a84800",
-        "on-secondary-fixed": "#1a1b1e",
-        "primary-container": "#375bd2",
-        "primary-fixed-dim": "#b7c4ff"
-      },
-      borderRadius: {
-        DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"
-      },
-      spacing: {
-        lg: "24px", xl: "32px", base: "4px", gutter: "16px", md: "16px", xs: "4px", sm: "8px", 40: "40px",
-        "container-margin-desktop": "40px",
-        "container-margin-mobile": "16px"
-      },
-      fontFamily: {
-        "headline-md": ["Inter"], "headline-lg": ["Inter"], "label-sm": ["Inter"],
-        "display-lg": ["Inter"], "headline-lg-mobile": ["Inter"], "body-sm": ["Inter"],
-        "label-md": ["Inter"], "body-lg": ["Inter"]
-      },
-      fontSize: {
-        "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
-        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
-        "label-sm": ["11px", {"lineHeight": "14px", "fontWeight": "500"}],
-        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
-        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
-        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
-        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
-        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
-      }
-    }
-  }
-}
-</script>
-<style>
-{{$bgMode := index .Settings "background_mode"}}
-{{$bgValue := index .Settings "background_value"}}
-{{$bgOverlay := index .Settings "background_overlay"}}
-{{if eq $bgMode "image"}}
-html { background: #0A0B0D; }
-body { background: transparent; color: #e2e1ec; font-family: 'Inter', sans-serif; }
-#bg-image { position: fixed; inset: 0; z-index: -2; background: url('{{$bgValue}}') center/cover; pointer-events: none; }
-#bg-image::after { content: ''; position: fixed; inset: 0; background: rgba(0,0,0,{{$bgOverlay}}); pointer-events: none; }
-{{else if eq $bgMode "gradient"}}
-html { background: {{$bgValue | safeCSS}}; }
-body { background: {{$bgValue | safeCSS}}; color: #e2e1ec; font-family: 'Inter', sans-serif; }
-{{else}}
-html { background: {{$bgValue | safeCSS}}; }
-body { background-color: {{$bgValue | safeCSS}}; color: #e2e1ec; font-family: 'Inter', sans-serif; }
-{{end}}
-.material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-.fill-icon { font-variation-settings: 'FILL' 1; }
-.glass-card { background: rgba(26, 27, 30, 0.8); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.04); transition: all 0.2s ease-in-out; }
-.glass-card:hover { background: rgba(44, 45, 49, 0.9); border-color: rgba(255, 255, 255, 0.08); }
-.tonal-layer-1 { background-color: #1A1B1E; border: 1px solid rgba(255, 255, 255, 0.04); }
-.tonal-layer-2 { background-color: #2C2D31; }
-.shimmer { background: linear-gradient(90deg, #1A1B1E 25%, #2C2D31 50%, #1A1B1E 75%); background-size: 200% 100%; animation: shimmer 2s infinite linear; }
-@keyframes shimmer { to { background-position: -200% 0; } }
-::-webkit-scrollbar { width: 6px; }
-{{if eq $bgMode "image"}}
-::-webkit-scrollbar-track { background: transparent; }
-{{else}}
-::-webkit-scrollbar-track { background: {{$bgValue | safeCSS}}; }
-{{end}}
-::-webkit-scrollbar-thumb { background: #2C2D31; border-radius: 10px; }
-.htmx-indicator { opacity: 0; transition: opacity 200ms ease-in; }
-.htmx-request .htmx-indicator { opacity: 1; }
-.htmx-request.htmx-indicator { opacity: 1; }
-tr.htmx-swapping { opacity: 0; transition: opacity 200ms ease-out; }
-input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-.toast-enter { animation: toast-in 0.3s ease-out; }
-.toast-exit { animation: toast-out 0.3s ease-in forwards; }
-@keyframes toast-in { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-@keyframes toast-out { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
-.no-scrollbar::-webkit-scrollbar { display: none; }
-.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-.glass-glow { box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.05); }
-.glass-nav { background: rgba(18, 19, 26, 0.96); will-change: transform; }
-@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-  .glass-nav { background: rgba(18, 19, 26, 0.82); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); will-change: transform; }
-}
-[x-cloak] { display: none !important; }
-@media (display-mode: standalone) {
-  .mobile-topnav { padding-top: calc(16px + constant(safe-area-inset-top, 0px)); padding-top: calc(16px + env(safe-area-inset-top, 0px)); }
-  .mobile-bottomnav { height: calc(64px + constant(safe-area-inset-bottom, 0px)); height: calc(64px + env(safe-area-inset-bottom, 0px)); padding-bottom: constant(safe-area-inset-bottom, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
-}
-@media (display-mode: standalone) and (max-width: 767px) {
-  main { padding-top: calc(68px + constant(safe-area-inset-top, 0px)) !important; padding-top: calc(68px + env(safe-area-inset-top, 0px)) !important; }
-}
-</style>
-<script>
-document.addEventListener('alpine:init', function() {
-  Alpine.store('toast', {
-    show: false, message: '', type: 'success', timer: null,
-    fire(msg, t) {
-      this.message = msg; this.type = t || 'success'; this.show = true;
-      clearTimeout(this.timer);
-      this.timer = setTimeout(() => { this.show = false; }, 3000);
-    }
-  });
-  Alpine.store('confirm', {
-    show: false, message: '', onConfirm: null,
-    fire(msg, callback) {
-      this.message = msg; this.onConfirm = callback; this.show = true;
-    },
-    confirm() {
-      if (this.onConfirm) this.onConfirm();
-      this.show = false; this.onConfirm = null;
-    },
-    cancel() {
-      this.show = false; this.onConfirm = null;
-    }
-  });
-  Alpine.store('notif', {
-  unread: 0,
-  items: [],
-  open: false,
-  init() { this.unread = {{.UnreadCount}}; },
-  async fetch() {
-    try {
-      var res = await fetch('/api/notifications');
-      var data = await res.json();
-      this.unread = data.unread;
-      this.items = data.items;
-    } catch(e) {}
-  },
-  toggle() {
-    this.open = !this.open;
-    if (this.open) this.fetch();
-  },
-  close() { this.open = false; },
-  async markRead(id) {
-    try { await fetch('/api/notifications/' + id + '/read', { method: 'PUT' }); } catch(e) {}
-    this.unread = Math.max(0, this.unread - 1);
-    var item = this.items.find(function(i) { return i.id === id; });
-    if (item) item.is_read = 1;
-  },
-  async markAllRead() {
-    try { await fetch('/api/notifications/read-all', { method: 'PUT' }); } catch(e) {}
-    this.unread = 0;
-    this.items.forEach(function(i) { i.is_read = 1; });
-  }
-});
-});
-function toast(msg, type) { Alpine.store('toast').fire(msg, type); }
-function confirmAction(msg, callback) { Alpine.store('confirm').fire(msg, callback); }
-</script>
-</head>
-<body class="overflow-x-hidden">
-{{if eq (index .Settings "background_mode") "image"}}<div id="bg-image"></div>{{end}}
-<div class="flex min-h-screen">
-<aside class="fixed left-0 top-0 h-screen w-[240px] glass-nav flex-col gap-lg p-md hidden md:flex z-50 border-r border-outline-variant/10">
-<div class="flex items-center gap-sm px-2">
-<img src="/static/logo/kestrel.svg" alt="" class="h-7"/>
-</div>
-<nav class="flex-1 flex flex-col gap-sm" id="sidebar-nav">
-<a class="nav-link flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all rounded-lg" href="/">
-<span class="material-symbols-outlined">dashboard</span><span class="font-label-md text-label-md">Dashboard</span>
-</a>
-<a class="nav-link flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all rounded-lg" href="/items">
-<span class="material-symbols-outlined">inventory_2</span><span class="font-label-md text-label-md">Items</span>
-</a>
-<a class="nav-link flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all rounded-lg" href="/schedule">
-<span class="material-symbols-outlined">calendar_today</span><span class="font-label-md text-label-md">Schedule</span>
-</a>
-<a class="nav-link flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all rounded-lg" href="/history">
-<span class="material-symbols-outlined">receipt_long</span><span class="font-label-md text-label-md">History</span>
-</a>
-<a class="nav-link flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all rounded-lg" href="/settings">
-<span class="material-symbols-outlined">settings</span><span class="font-label-md text-label-md">Settings</span>
-</a>
-</nav>
-<div class="mt-auto pt-md border-t border-outline-variant/10">
-<a href="/items/new" class="w-full bg-primary-container text-on-primary-container py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:brightness-110 active:scale-95 transition-all">
-<span class="material-symbols-outlined text-sm">add</span><span class="font-label-md text-label-md">New Purchase</span>
-</a>
-</div>
-</aside>
-<nav class="md:hidden fixed top-0 left-0 right-0 z-[60] glass-nav px-container-margin-mobile py-md border-b border-outline-variant/10 mobile-topnav">
-<div class="flex items-center justify-between">
-<div class="flex items-center gap-sm">
-<img src="/static/logo/kestrel.svg" alt="" class="h-6"/>
-</div>
-<div class="flex items-center gap-md">
-<button class="text-on-surface-variant hover:text-primary transition-colors active:scale-95 relative" @click="$store.notif.toggle()">
-<span class="material-symbols-outlined">notifications</span>
-<template x-if="$store.notif.unread > 0">
-<span class="absolute -top-1 -right-1 bg-primary text-on-primary text-[9px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-1 border-2 border-surface" x-text="$store.notif.unread"></span>
-</template>
-</button>
-<a href="/settings" class="text-on-surface-variant hover:text-primary transition-colors active:scale-95">
-<span class="material-symbols-outlined">settings</span>
-</a>
-</div>
-</div>
-</nav>
-<main x-data class="flex-1 md:ml-[240px] px-5 md:px-12 min-h-screen pb-32 md:pb-xl w-full max-w-full pt-[72px] md:pt-xl">
-<div x-data x-show="$store.toast.show" x-cloak class="fixed top-4 right-4 z-[200] max-w-sm w-full pointer-events-none" @click="$store.toast.show=false">
-  <div class="pointer-events-auto glass-card rounded-xl px-lg py-md flex items-center gap-3 shadow-2xl" :class="$store.toast.type==='error'?'border-l-4 border-red-500':'border-l-4 border-emerald-500'" x-init="$el.classList.add('toast-enter')">
-    <span class="material-symbols-outlined" :class="$store.toast.type==='error'?'text-red-400':'text-emerald-400'" x-text="$store.toast.type==='error'?'error':'check_circle'"></span>
-    <span class="font-body-md text-body-md text-on-surface flex-1" x-text="$store.toast.message"></span>
-  </div>
-</div>
-<div x-data x-show="$store.confirm.show" x-cloak class="fixed inset-0 z-[300] flex items-center justify-center p-md" @keydown.escape="$store.confirm.cancel()">
-  <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="$store.confirm.cancel()"></div>
-  <div class="glass-card rounded-2xl p-xl max-w-sm w-full shadow-2xl relative z-10" @click.outside="$store.confirm.cancel()">
-    <div class="flex items-start gap-3 mb-lg">
-      <div class="w-10 h-10 rounded-full bg-red-500/15 flex items-center justify-center shrink-0">
-        <span class="material-symbols-outlined text-red-400 text-xl">warning</span>
-      </div>
-      <div>
-        <h3 class="font-headline-md text-headline-md text-on-surface mb-1">Confirm</h3>
-        <p class="font-body-md text-body-md text-on-surface-variant" x-text="$store.confirm.message"></p>
-      </div>
-    </div>
-    <div class="flex justify-end gap-3">
-      <button class="px-5 py-2.5 rounded-xl border border-outline-variant/30 text-on-surface font-label-md text-label-md hover:bg-surface-container-high transition-colors" @click="$store.confirm.cancel()">Cancel</button>
-      <button class="px-5 py-2.5 rounded-xl bg-red-600 text-white font-label-md text-label-md hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-red-600/20" @click="$store.confirm.confirm()">Delete</button>
-    </div>
-  </div>
-</div>
-{{if .Error}}<div class="bg-error-container text-on-error-container px-lg py-md rounded-xl mb-lg flex items-center gap-3"><span class="material-symbols-outlined">error</span><span>{{.Error}}</span></div>{{end}}
-<div x-show="$store.notif.open" x-cloak class="fixed inset-0 z-[150]" @click="$store.notif.close()">
-<div class="fixed top-16 right-4 w-80 max-w-[calc(100vw-2rem)] glass-card rounded-xl shadow-2xl border border-outline-variant/10 overflow-hidden" @click.stop>
-<div class="flex items-center justify-between px-lg py-md border-b border-outline-variant/10 bg-surface-container-low">
-<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Notifications</h3>
-<div class="flex items-center gap-2">
-<button class="font-label-sm text-label-sm text-primary hover:text-on-primary-container transition-colors" @click="$store.notif.markAllRead()" x-show="$store.notif.unread > 0">Mark all read</button>
-<button class="text-on-surface-variant hover:text-on-surface transition-colors" @click="$store.notif.close()"><span class="material-symbols-outlined text-[20px]">close</span></button>
-</div>
-</div>
-<div class="max-h-96 overflow-y-auto" x-show="$store.notif.items.length > 0">
-<template x-for="item in $store.notif.items" :key="item.id">
-<div class="flex items-start gap-3 px-lg py-md border-b border-outline-variant/5 hover:bg-surface-container-low transition-colors cursor-pointer" :class="item.is_read ? '' : 'bg-surface-container-low/50'" @click="$store.notif.markRead(item.id)">
-<div class="mt-1">
-<template x-if="item.type === 'price_drop'">
-<span class="material-symbols-outlined text-lg text-emerald-500">trending_down</span>
-</template>
-<template x-if="item.type === 'purchase_ready'">
-<span class="material-symbols-outlined text-lg text-primary">check_circle</span>
-</template>
-<template x-if="item.type !== 'price_drop' &amp;&amp; item.type !== 'purchase_ready'">
-<span class="material-symbols-outlined text-lg text-on-surface-variant">notifications</span>
-</template>
-</div>
-<div class="flex-1 min-w-0">
-<p class="font-body-sm text-body-sm text-on-surface font-medium truncate" x-text="item.subject"></p>
-<p class="font-label-sm text-label-sm text-on-surface-variant line-clamp-2 mt-1" x-text="item.body"></p>
-<p class="font-label-sm text-label-sm text-on-surface-variant/60 mt-1" x-text="item.sent_at"></p>
-</div>
-<template x-if="!item.is_read">
-<div class="w-2 h-2 rounded-full bg-primary shrink-0 mt-2"></div>
-</template>
-</div>
-</template>
-</div>
-<div class="flex flex-col items-center justify-center py-12 px-lg text-center" x-show="$store.notif.items.length === 0">
-<span class="material-symbols-outlined text-3xl text-on-surface-variant/40 mb-md">notifications_off</span>
-<p class="font-body-md text-body-md text-on-surface-variant">No notifications yet</p>
-<p class="font-label-sm text-label-sm text-on-surface-variant/60 mt-1">Price drops and reminders will appear here.</p>
-</div>
-</div>
-</div>
-{{end}}
+    <head>
+        <meta charset="utf-8" />
+        <meta
+            content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+            name="viewport"
+        />
+        <title>Kestrel | {{.Title}}</title>
+        <link rel="icon" type="image/svg+xml" href="/static/logo/favicon.svg" />
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta
+            name="apple-mobile-web-app-status-bar-style"
+            content="black-translucent"
+        />
+        <meta name="apple-mobile-web-app-title" content="Kestrel" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="theme-color" content="#12131a" />
+        <meta name="tailwindcss-cdn" content="production" />
+        <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap"
+            rel="stylesheet"
+        />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+            rel="stylesheet"
+        />
+        <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+        <script
+            defer
+            src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"
+        ></script>
+        <script>
+            tailwind.config = {
+                darkMode: "class",
+                theme: {
+                    extend: {
+                        colors: {
+                            "on-primary": "#002681",
+                            "on-secondary-container": "#b9b8bc",
+                            "on-primary-container": "#dde1ff",
+                            "inverse-surface": "#e2e1ec",
+                            "on-tertiary": "#552100",
+                            surface: "#12131a",
+                            "inverse-on-surface": "#2f3038",
+                            "surface-container-low": "#1a1b22",
+                            background: "#12131a",
+                            "primary-fixed": "#dce1ff",
+                            "on-tertiary-container": "#ffdccc",
+                            "secondary-fixed": "#e3e2e6",
+                            "tertiary-fixed-dim": "#ffb690",
+                            "inverse-primary": "#2f54cb",
+                            "on-primary-fixed": "#001551",
+                            "on-surface-variant": "#c4c5d6",
+                            "surface-variant": "#33343c",
+                            "surface-container-highest": "#33343c",
+                            "surface-bright": "#383941",
+                            secondary: "#c7c6ca",
+                            "surface-container": "#1e1f27",
+                            "surface-dim": "#12131a",
+                            "on-error-container": "#ffdad6",
+                            "on-background": "#e2e1ec",
+                            "surface-container-high": "#282a31",
+                            "tertiary-fixed": "#ffdbcb",
+                            "on-surface": "#e2e1ec",
+                            "error-container": "#93000a",
+                            tertiary: "#ffb690",
+                            "surface-tint": "#b7c4ff",
+                            error: "#ffb4ab",
+                            "secondary-fixed-dim": "#c7c6ca",
+                            "on-secondary-fixed-variant": "#46474a",
+                            "outline-variant": "#444654",
+                            "on-tertiary-fixed": "#341100",
+                            primary: "#b7c4ff",
+                            "on-primary-fixed-variant": "#0439b3",
+                            outline: "#8e909f",
+                            "on-error": "#690005",
+                            "on-secondary": "#2f3033",
+                            "secondary-container": "#48494c",
+                            "on-tertiary-fixed-variant": "#783100",
+                            "surface-container-lowest": "#0c0e15",
+                            "tertiary-container": "#a84800",
+                            "on-secondary-fixed": "#1a1b1e",
+                            "primary-container": "#375bd2",
+                            "primary-fixed-dim": "#b7c4ff",
+                        },
+                        borderRadius: {
+                            DEFAULT: "0.25rem",
+                            lg: "0.5rem",
+                            xl: "0.75rem",
+                            full: "9999px",
+                        },
+                        spacing: {
+                            lg: "24px",
+                            xl: "32px",
+                            base: "4px",
+                            gutter: "16px",
+                            md: "16px",
+                            xs: "4px",
+                            sm: "8px",
+                            40: "40px",
+                            "container-margin-desktop": "40px",
+                            "container-margin-mobile": "16px",
+                        },
+                        fontFamily: {
+                            "headline-md": ["Inter"],
+                            "headline-lg": ["Inter"],
+                            "label-sm": ["Inter"],
+                            "display-lg": ["Inter"],
+                            "headline-lg-mobile": ["Inter"],
+                            "body-sm": ["Inter"],
+                            "label-md": ["Inter"],
+                            "body-lg": ["Inter"],
+                        },
+                        fontSize: {
+                            "headline-md": [
+                                "20px",
+                                { lineHeight: "28px", fontWeight: "600" },
+                            ],
+                            "headline-lg": [
+                                "32px",
+                                {
+                                    lineHeight: "40px",
+                                    letterSpacing: "-0.01em",
+                                    fontWeight: "700",
+                                },
+                            ],
+                            "label-sm": [
+                                "11px",
+                                { lineHeight: "14px", fontWeight: "500" },
+                            ],
+                            "display-lg": [
+                                "48px",
+                                {
+                                    lineHeight: "56px",
+                                    letterSpacing: "-0.02em",
+                                    fontWeight: "700",
+                                },
+                            ],
+                            "headline-lg-mobile": [
+                                "24px",
+                                { lineHeight: "32px", fontWeight: "700" },
+                            ],
+                            "body-sm": [
+                                "14px",
+                                { lineHeight: "20px", fontWeight: "400" },
+                            ],
+                            "label-md": [
+                                "12px",
+                                {
+                                    lineHeight: "16px",
+                                    letterSpacing: "0.05em",
+                                    fontWeight: "600",
+                                },
+                            ],
+                            "body-lg": [
+                                "16px",
+                                { lineHeight: "24px", fontWeight: "400" },
+                            ],
+                        },
+                    },
+                },
+            };
+        </script>
+        <style>
+            {{$bgMode := index .Settings "background_mode"}}
+            {{$bgValue := index .Settings "background_value"}}
+            {{$bgOverlay := index .Settings "background_overlay"}}
+            {{if eq $bgMode "image"}}
+            html { background: #0A0B0D; }
+            body { background: transparent; color: #e2e1ec; font-family: 'Inter', sans-serif; }
+            #bg-image { position: fixed; inset: 0; z-index: -2; background: url('{{$bgValue}}') center/cover; pointer-events: none; }
+            #bg-image::after { content: ''; position: fixed; inset: 0; background: rgba(0,0,0,{{$bgOverlay}}); pointer-events: none; }
+            {{else if eq $bgMode "gradient"}}
+            html { background: {{$bgValue | safeCSS}}; }
+            body { background: {{$bgValue | safeCSS}}; color: #e2e1ec; font-family: 'Inter', sans-serif; }
+            {{else}}
+            html { background: {{$bgValue | safeCSS}}; }
+            body { background-color: {{$bgValue | safeCSS}}; color: #e2e1ec; font-family: 'Inter', sans-serif; }
+            {{end}}
+            .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+            .fill-icon { font-variation-settings: 'FILL' 1; }
+            .glass-card { background: rgba(26, 27, 30, 0.8); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.04); transition: all 0.2s ease-in-out; }
+            .glass-card:hover { background: rgba(44, 45, 49, 0.9); border-color: rgba(255, 255, 255, 0.08); }
+            .tonal-layer-1 { background-color: #1A1B1E; border: 1px solid rgba(255, 255, 255, 0.04); }
+            .tonal-layer-2 { background-color: #2C2D31; }
+            .shimmer { background: linear-gradient(90deg, #1A1B1E 25%, #2C2D31 50%, #1A1B1E 75%); background-size: 200% 100%; animation: shimmer 2s infinite linear; }
+            @keyframes shimmer { to { background-position: -200% 0; } }
+            ::-webkit-scrollbar { width: 6px; }
+            {{if eq $bgMode "image"}}
+            ::-webkit-scrollbar-track { background: transparent; }
+            {{else}}
+            ::-webkit-scrollbar-track { background: {{$bgValue | safeCSS}}; }
+            {{end}}
+            ::-webkit-scrollbar-thumb { background: #2C2D31; border-radius: 10px; }
+            .htmx-indicator { opacity: 0; transition: opacity 200ms ease-in; }
+            .htmx-request .htmx-indicator { opacity: 1; }
+            .htmx-request.htmx-indicator { opacity: 1; }
+            tr.htmx-swapping { opacity: 0; transition: opacity 200ms ease-out; }
+            input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+            .toast-enter { animation: toast-in 0.3s ease-out; }
+            .toast-exit { animation: toast-out 0.3s ease-in forwards; }
+            @keyframes toast-in { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+            @keyframes toast-out { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+            .no-scrollbar::-webkit-scrollbar { display: none; }
+            .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+            .glass-glow { box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.05); }
+            .glass-nav { background: rgba(18, 19, 26, 0.4); will-change: transform; }
+            @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+              .glass-nav { background: rgba(18, 19, 26, 0.3); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); will-change: transform; }
+            }
+            [x-cloak] { display: none !important; }
+            @media (display-mode: standalone) {
+              .mobile-topnav { padding-top: calc(16px + max(constant(safe-area-inset-top, 20px), 20px)); padding-top: calc(16px + max(env(safe-area-inset-top, 20px), 20px)); }
+              .mobile-bottomnav { bottom: constant(safe-area-inset-bottom, 0px); bottom: env(safe-area-inset-bottom, 0px); }
+            }
+            @media (display-mode: standalone) and (max-width: 767px) {
+              main { padding-top: calc(68px + constant(safe-area-inset-top, 0px)) !important; padding-top: calc(68px + env(safe-area-inset-top, 0px)) !important; }
+            }
+        </style>
+        <script>
+            document.addEventListener('alpine:init', function() {
+              Alpine.store('toast', {
+                show: false, message: '', type: 'success', timer: null,
+                fire(msg, t) {
+                  this.message = msg; this.type = t || 'success'; this.show = true;
+                  clearTimeout(this.timer);
+                  this.timer = setTimeout(() => { this.show = false; }, 3000);
+                }
+              });
+              Alpine.store('confirm', {
+                show: false, message: '', onConfirm: null,
+                fire(msg, callback) {
+                  this.message = msg; this.onConfirm = callback; this.show = true;
+                },
+                confirm() {
+                  if (this.onConfirm) this.onConfirm();
+                  this.show = false; this.onConfirm = null;
+                },
+                cancel() {
+                  this.show = false; this.onConfirm = null;
+                }
+              });
+              Alpine.store('notif', {
+              unread: 0,
+              items: [],
+              open: false,
+              init() { this.unread = {{.UnreadCount}}; },
+              async fetch() {
+                try {
+                  var res = await fetch('/api/notifications');
+                  var data = await res.json();
+                  this.unread = data.unread;
+                  this.items = data.items;
+                } catch(e) {}
+              },
+              toggle() {
+                this.open = !this.open;
+                if (this.open) this.fetch();
+              },
+              close() { this.open = false; },
+              async markRead(id) {
+                try { await fetch('/api/notifications/' + id + '/read', { method: 'PUT' }); } catch(e) {}
+                this.unread = Math.max(0, this.unread - 1);
+                var item = this.items.find(function(i) { return i.id === id; });
+                if (item) item.is_read = 1;
+              },
+              async markAllRead() {
+                try { await fetch('/api/notifications/read-all', { method: 'PUT' }); } catch(e) {}
+                this.unread = 0;
+                this.items.forEach(function(i) { i.is_read = 1; });
+              }
+            });
+            });
+            function toast(msg, type) { Alpine.store('toast').fire(msg, type); }
+            function confirmAction(msg, callback) { Alpine.store('confirm').fire(msg, callback); }
+        </script>
+    </head>
+    <body class="overflow-x-hidden">
+        {{if eq (index .Settings "background_mode") "image"}}
+        <div id="bg-image"></div>
+        {{end}}
+        <div class="flex min-h-screen">
+            <aside
+                class="fixed left-0 top-0 h-screen w-[240px] glass-nav flex-col gap-lg p-md hidden md:flex z-50 border-r border-outline-variant/10"
+            >
+                <div class="flex items-center gap-sm px-2">
+                    <img src="/static/logo/kestrel.svg" alt="" class="h-7" />
+                </div>
+                <nav class="flex-1 flex flex-col gap-sm" id="sidebar-nav">
+                    <a
+                        class="nav-link flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all rounded-lg"
+                        href="/"
+                    >
+                        <span class="material-symbols-outlined">dashboard</span
+                        ><span class="font-label-md text-label-md"
+                            >Dashboard</span
+                        >
+                    </a>
+                    <a
+                        class="nav-link flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all rounded-lg"
+                        href="/items"
+                    >
+                        <span class="material-symbols-outlined"
+                            >inventory_2</span
+                        ><span class="font-label-md text-label-md">Items</span>
+                    </a>
+                    <a
+                        class="nav-link flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all rounded-lg"
+                        href="/schedule"
+                    >
+                        <span class="material-symbols-outlined"
+                            >calendar_today</span
+                        ><span class="font-label-md text-label-md"
+                            >Schedule</span
+                        >
+                    </a>
+                    <a
+                        class="nav-link flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all rounded-lg"
+                        href="/history"
+                    >
+                        <span class="material-symbols-outlined"
+                            >receipt_long</span
+                        ><span class="font-label-md text-label-md"
+                            >History</span
+                        >
+                    </a>
+                    <a
+                        class="nav-link flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all rounded-lg"
+                        href="/settings"
+                    >
+                        <span class="material-symbols-outlined">settings</span
+                        ><span class="font-label-md text-label-md"
+                            >Settings</span
+                        >
+                    </a>
+                </nav>
+                <div class="mt-auto pt-md border-t border-outline-variant/10">
+                    <a
+                        href="/items/new"
+                        class="w-full bg-primary-container text-on-primary-container py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:brightness-110 active:scale-95 transition-all"
+                    >
+                        <span class="material-symbols-outlined text-sm"
+                            >add</span
+                        ><span class="font-label-md text-label-md"
+                            >New Purchase</span
+                        >
+                    </a>
+                </div>
+            </aside>
+            <nav
+                x-data
+                class="md:hidden fixed top-0 left-0 right-0 z-[60] glass-nav px-container-margin-mobile py-md border-b border-outline-variant/10 mobile-topnav"
+            >
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-sm">
+                        <img
+                            src="/static/logo/kestrel.svg"
+                            alt=""
+                            class="h-6"
+                        />
+                    </div>
+                    <div class="flex items-center gap-md">
+                        <button
+                            class="text-on-surface-variant hover:text-primary transition-colors active:scale-95 relative"
+                            @click="$store.notif.toggle()"
+                        >
+                            <span class="material-symbols-outlined"
+                                >notifications</span
+                            >
+                            <template x-if="$store.notif.unread > 0">
+                                <span
+                                    class="absolute -top-1 -right-1 bg-primary text-on-primary text-[9px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-1 border-2 border-surface"
+                                    x-text="$store.notif.unread"
+                                ></span>
+                            </template>
+                        </button>
+                        <a
+                            href="/settings"
+                            class="text-on-surface-variant hover:text-primary transition-colors active:scale-95"
+                        >
+                            <span class="material-symbols-outlined"
+                                >settings</span
+                            >
+                        </a>
+                    </div>
+                </div>
+            </nav>
+            <main
+                x-data
+                class="flex-1 md:ml-[240px] px-5 md:px-12 min-h-screen pb-32 md:pb-xl w-full max-w-full pt-[72px] md:pt-xl"
+            >
+                <div
+                    x-data
+                    x-show="$store.toast.show"
+                    x-cloak
+                    class="fixed top-4 right-4 z-[200] max-w-sm w-full pointer-events-none"
+                    @click="$store.toast.show=false"
+                >
+                    <div
+                        class="pointer-events-auto glass-card rounded-xl px-lg py-md flex items-center gap-3 shadow-2xl"
+                        :class="$store.toast.type==='error'?'border-l-4 border-red-500':'border-l-4 border-emerald-500'"
+                        x-init="$el.classList.add('toast-enter')"
+                    >
+                        <span
+                            class="material-symbols-outlined"
+                            :class="$store.toast.type==='error'?'text-red-400':'text-emerald-400'"
+                            x-text="$store.toast.type==='error'?'error':'check_circle'"
+                        ></span>
+                        <span
+                            class="font-body-md text-body-md text-on-surface flex-1"
+                            x-text="$store.toast.message"
+                        ></span>
+                    </div>
+                </div>
+                <div
+                    x-data
+                    x-show="$store.confirm.show"
+                    x-cloak
+                    class="fixed inset-0 z-[300] flex items-center justify-center p-md"
+                    @keydown.escape="$store.confirm.cancel()"
+                >
+                    <div
+                        class="fixed inset-0 bg-black/60 backdrop-blur-sm"
+                        @click="$store.confirm.cancel()"
+                    ></div>
+                    <div
+                        class="glass-card rounded-2xl p-xl max-w-sm w-full shadow-2xl relative z-10"
+                        @click.outside="$store.confirm.cancel()"
+                    >
+                        <div class="flex items-start gap-3 mb-lg">
+                            <div
+                                class="w-10 h-10 rounded-full bg-red-500/15 flex items-center justify-center shrink-0"
+                            >
+                                <span
+                                    class="material-symbols-outlined text-red-400 text-xl"
+                                    >warning</span
+                                >
+                            </div>
+                            <div>
+                                <h3
+                                    class="font-headline-md text-headline-md text-on-surface mb-1"
+                                >
+                                    Confirm
+                                </h3>
+                                <p
+                                    class="font-body-md text-body-md text-on-surface-variant"
+                                    x-text="$store.confirm.message"
+                                ></p>
+                            </div>
+                        </div>
+                        <div class="flex justify-end gap-3">
+                            <button
+                                class="px-5 py-2.5 rounded-xl border border-outline-variant/30 text-on-surface font-label-md text-label-md hover:bg-surface-container-high transition-colors"
+                                @click="$store.confirm.cancel()"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                class="px-5 py-2.5 rounded-xl bg-red-600 text-white font-label-md text-label-md hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-red-600/20"
+                                @click="$store.confirm.confirm()"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {{if .Error}}
+                <div
+                    class="bg-error-container text-on-error-container px-lg py-md rounded-xl mb-lg flex items-center gap-3"
+                >
+                    <span class="material-symbols-outlined">error</span
+                    ><span>{{.Error}}</span>
+                </div>
+                {{end}}
+                <div
+                    x-show="$store.notif.open"
+                    x-cloak
+                    class="fixed inset-0 z-[150]"
+                    @click="$store.notif.close()"
+                >
+                    <div
+                        class="fixed top-16 right-4 w-80 max-w-[calc(100vw-2rem)] glass-card rounded-xl shadow-2xl border border-outline-variant/10 overflow-hidden"
+                        @click.stop
+                    >
+                        <div
+                            class="flex items-center justify-between px-lg py-md border-b border-outline-variant/10 bg-surface-container-low"
+                        >
+                            <h3
+                                class="font-headline-sm text-headline-sm text-on-surface font-semibold"
+                            >
+                                Notifications
+                            </h3>
+                            <div class="flex items-center gap-2">
+                                <button
+                                    class="font-label-sm text-label-sm text-primary hover:text-on-primary-container transition-colors"
+                                    @click="$store.notif.markAllRead()"
+                                    x-show="$store.notif.unread > 0"
+                                >
+                                    Mark all read
+                                </button>
+                                <button
+                                    class="text-on-surface-variant hover:text-on-surface transition-colors"
+                                    @click="$store.notif.close()"
+                                >
+                                    <span
+                                        class="material-symbols-outlined text-[20px]"
+                                        >close</span
+                                    >
+                                </button>
+                            </div>
+                        </div>
+                        <div
+                            class="max-h-96 overflow-y-auto"
+                            x-show="$store.notif.items.length > 0"
+                        >
+                            <template
+                                x-for="item in $store.notif.items"
+                                :key="item.id"
+                            >
+                                <div
+                                    class="flex items-start gap-3 px-lg py-md border-b border-outline-variant/5 hover:bg-surface-container-low transition-colors cursor-pointer"
+                                    :class="item.is_read ? '' : 'bg-surface-container-low/50'"
+                                    @click="$store.notif.markRead(item.id)"
+                                >
+                                    <div class="mt-1">
+                                        <template
+                                            x-if="item.type === 'price_drop'"
+                                        >
+                                            <span
+                                                class="material-symbols-outlined text-lg text-emerald-500"
+                                                >trending_down</span
+                                            >
+                                        </template>
+                                        <template
+                                            x-if="item.type === 'purchase_ready'"
+                                        >
+                                            <span
+                                                class="material-symbols-outlined text-lg text-primary"
+                                                >check_circle</span
+                                            >
+                                        </template>
+                                        <template
+                                            x-if="item.type !== 'price_drop' &amp;&amp; item.type !== 'purchase_ready'"
+                                        >
+                                            <span
+                                                class="material-symbols-outlined text-lg text-on-surface-variant"
+                                                >notifications</span
+                                            >
+                                        </template>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p
+                                            class="font-body-sm text-body-sm text-on-surface font-medium truncate"
+                                            x-text="item.subject"
+                                        ></p>
+                                        <p
+                                            class="font-label-sm text-label-sm text-on-surface-variant line-clamp-2 mt-1"
+                                            x-text="item.body"
+                                        ></p>
+                                        <p
+                                            class="font-label-sm text-label-sm text-on-surface-variant/60 mt-1"
+                                            x-text="item.sent_at"
+                                        ></p>
+                                    </div>
+                                    <template x-if="!item.is_read">
+                                        <div
+                                            class="w-2 h-2 rounded-full bg-primary shrink-0 mt-2"
+                                        ></div>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                        <div
+                            class="flex flex-col items-center justify-center py-12 px-lg text-center"
+                            x-show="$store.notif.items.length === 0"
+                        >
+                            <span
+                                class="material-symbols-outlined text-3xl text-on-surface-variant/40 mb-md"
+                                >notifications_off</span
+                            >
+                            <p
+                                class="font-body-md text-body-md text-on-surface-variant"
+                            >
+                                No notifications yet
+                            </p>
+                            <p
+                                class="font-label-sm text-label-sm text-on-surface-variant/60 mt-1"
+                            >
+                                Price drops and reminders will appear here.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {{end}}
+            </main>
+        </div>
+    </body>
+</html>
