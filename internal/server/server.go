@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -21,6 +22,26 @@ type Server struct {
 	Handler *handler.Handler
 }
 
+func fmtSize(b int) string {
+	if b < 1024 {
+		return fmt.Sprintf("%dB", b)
+	}
+	if b < 1024*1024 {
+		return fmt.Sprintf("%dKB", b/1024)
+	}
+	return fmt.Sprintf("%.1fMB", float64(b)/(1024*1024))
+}
+
+func fmtDur(d time.Duration) string {
+	if d < time.Millisecond {
+		return fmt.Sprintf("%.0fµs", float64(d.Microseconds()))
+	}
+	if d < time.Second {
+		return fmt.Sprintf("%.0fms", float64(d.Milliseconds()))
+	}
+	return fmt.Sprintf("%.2fs", d.Seconds())
+}
+
 func requestLogger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		lrw := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
@@ -30,13 +51,12 @@ func requestLogger(next http.Handler) http.Handler {
 		if q := r.URL.RawQuery; q != "" {
 			path += "?" + q
 		}
-		from := r.RemoteAddr
-		if idx := strings.LastIndex(from, ":"); idx != -1 {
-			from = from[:idx]
+		if len(path) > 55 {
+			path = path[:52] + "..."
 		}
-		log.Printf(`"%s %s %s" from %s - %d %dB in %s`,
-			r.Method, path, r.Proto, from,
-			lrw.Status(), lrw.BytesWritten(), time.Since(start),
+		log.Printf("%s  %-6s  %-55s  %3d  %6s  %6s",
+			start.Format("2006-01-02 15:04"), r.Method, path,
+			lrw.Status(), fmtSize(lrw.BytesWritten()), fmtDur(time.Since(start)),
 		)
 	})
 }
