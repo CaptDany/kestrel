@@ -74,6 +74,9 @@ func main() {
 			}
 			return a / b
 		},
+		"safeCSS": func(s string) template.CSS {
+			return template.CSS(s)
+		},
 		"labelize": func(s string) string {
 			if s == "" {
 				return ""

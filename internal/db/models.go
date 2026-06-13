@@ -96,6 +96,15 @@ type CategoryBreakdown struct {
 	Color    string  `json:"color"`
 }
 
+type DonutSlice struct {
+	Color    string  `json:"color"`
+	Category string  `json:"category"`
+	Total    float64 `json:"total"`
+	Percent  float64 `json:"percent"`
+	DashLen  float64 `json:"dash_len"`
+	Offset   float64 `json:"offset"`
+}
+
 type MonthlyTrend struct {
 	Month   string  `json:"month"`
 	Label   string  `json:"label"`

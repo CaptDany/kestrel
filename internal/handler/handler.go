@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"math"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -148,6 +149,9 @@ func (h *Handler) Dashboard(w http.ResponseWriter, r *http.Request) {
 		grandTotal += categoryBreakdown[i].Total
 	}
 	conicGradient := ""
+	const circumference = 251.33
+	cumOffset := 0.0
+	var donutSlices []db.DonutSlice
 	if grandTotal > 0 {
 		var parts []string
 		cumDeg := 0.0
@@ -159,6 +163,18 @@ func (h *Handler) Dashboard(w http.ResponseWriter, r *http.Request) {
 			startDeg := cumDeg
 			cumDeg += angle
 			parts = append(parts, fmt.Sprintf("%s %.1fdeg %.1fdeg", c.Color, startDeg, cumDeg))
+
+			pct := (c.Total / grandTotal) * 100
+			dashLen := circumference * pct / 100
+			donutSlices = append(donutSlices, db.DonutSlice{
+				Color:    c.Color,
+				Category: c.Category,
+				Total:    c.Total,
+				Percent:  math.Round(pct*10) / 10,
+				DashLen:  dashLen,
+				Offset:   cumOffset,
+			})
+			cumOffset += dashLen
 		}
 		if len(parts) > 0 {
 			conicGradient = "conic-gradient(" + strings.Join(parts, ", ") + ")"
@@ -192,6 +208,8 @@ func (h *Handler) Dashboard(w http.ResponseWriter, r *http.Request) {
 			"grandTotal":               grandTotal,
 			"categoryBreakdown":        categoryBreakdown,
 			"conicGradient":            conicGradient,
+			"donutSlices":              donutSlices,
+			"circumference":            circumference,
 			"monthlyTrend":             monthlyTrend,
 			"savingProgress":           savingProgress,
 			"currentView":              view,
