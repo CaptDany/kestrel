@@ -202,7 +202,7 @@
 <p class="font-label-sm text-label-sm text-on-surface-variant mt-1">{{.ScheduledDate}}{{if .BudgetCycle}} • {{.BudgetCycle}}{{end}}</p>
 </div>
 <div class="flex flex-col items-end gap-1 shrink-0">
-<span class="font-headline-md text-headline-md text-white">{{if .AmountAllocated}}{{printf "$%.2f" .AmountAllocated}}{{else}}—{{end}}</span>
+<span class="font-headline-md text-headline-md text-white">{{if .AmountAllocated}}{{printf "$%.2f" (deref .AmountAllocated)}}{{else}}—{{end}}</span>
 <span class="px-2 py-0.5 bg-primary/10 text-primary rounded-full font-label-sm text-[10px] font-bold uppercase">{{if eq .Status "planned"}}Planned{{else if eq .Status "completed"}}Completed{{else}}{{.Status}}{{end}}</span>
 </div>
 </div>
@@ -386,13 +386,13 @@
 <span class="text-on-surface-variant font-label-md uppercase shrink-0">Planned</span>
 {{end}}
 </div>
-{{if or (eq $p.Status "saving") (and $p.AmountAllocated $p.ItemPrice (lt $p.AmountAllocated $p.ItemPrice))}}
-{{$allocPct := 0.0}}{{if and $p.AmountAllocated $p.ItemPrice (gt $p.ItemPrice 0.0)}}{{$allocPct = div (mul $p.AmountAllocated 100.0) $p.ItemPrice}}{{end}}
+{{if or (eq $p.Status "saving") (and $p.AmountAllocated $p.ItemPrice (lt (deref $p.AmountAllocated) (deref $p.ItemPrice)))}}
+{{$allocPct := 0.0}}{{if and $p.AmountAllocated $p.ItemPrice (gt (deref $p.ItemPrice) 0.0)}}{{$allocPct = div (mul (deref $p.AmountAllocated) 100.0) (deref $p.ItemPrice)}}{{end}}
 {{if gt $allocPct 0.0}}
 <div class="mt-md">
 <div class="flex justify-between mb-xs">
 <span class="font-label-md text-label-md text-on-surface-variant">{{printf "%.0f" $allocPct}}%</span>
-<span class="font-label-md text-label-md text-on-surface-variant">{{printf "$%.2f" $p.AmountAllocated}} / {{printf "$%.2f" $p.ItemPrice}}</span>
+<span class="font-label-md text-label-md text-on-surface-variant">{{printf "$%.2f" (deref $p.AmountAllocated)}} / {{printf "$%.2f" (deref $p.ItemPrice)}}</span>
 </div>
 <div class="h-1 bg-surface-container-highest rounded-full overflow-hidden">
 <div class="h-full bg-tertiary rounded-full" style="width: {{printf "%.0f" $allocPct}}%"></div>

@@ -44,7 +44,7 @@
 <td class="px-lg py-md">
 <a href="{{.ItemURL}}" target="_blank" rel="noopener" class="font-body-md text-body-md text-on-surface hover:text-primary transition-colors truncate max-w-[200px] block">{{.ItemTitle}}</a>
 </td>
-<td class="px-lg py-md text-right font-body-md text-body-md text-on-surface-variant">{{if .PlannedPrice}}{{printf "$%.2f" .PlannedPrice}}{{else}}—{{end}}</td>
+<td class="px-lg py-md text-right font-body-md text-body-md text-on-surface-variant">{{if .PlannedPrice}}{{printf "$%.2f" (deref .PlannedPrice)}}{{else}}—{{end}}</td>
 <td class="px-lg py-md text-right font-body-md text-body-md text-on-surface">{{printf "$%.2f" .ActualPrice}}</td>
 {{$variance := sub .ActualPrice (deref .PlannedPrice)}}
 <td class="px-lg py-md text-right font-body-md text-body-md {{if lt $variance 0.0}}text-emerald-400{{else if gt $variance 0.0}}text-rose-400{{else}}text-on-surface-variant{{end}}">{{printf "$%+.2f" $variance}}</td>
