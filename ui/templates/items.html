@@ -29,7 +29,7 @@
 <span class="bg-primary/10 text-primary px-3 py-1 rounded-full font-label-sm text-label-sm uppercase tracking-wider">{{if .Category}}{{.Category}}{{else}}General{{end}}</span>
 <div class="flex items-center gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
 <a href="/items/{{.ID}}/edit" class="text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-[20px]">edit</span></a>
-<button class="text-on-surface-variant hover:text-error transition-colors" hx-delete="/api/items/{{.ID}}" hx-target="#item-{{.ID}}" hx-swap="delete" hx-confirm="Delete this item?"><span class="material-symbols-outlined text-[20px]">delete</span></button>
+<button class="text-on-surface-variant hover:text-error transition-colors" @click.prevent="confirmAction('Delete this item?', function() { htmx.ajax('DELETE', '/api/items/{{.ID}}', { target: '#item-{{.ID}}', swap: 'delete' }); })"><span class="material-symbols-outlined text-[20px]">delete</span></button>
 </div>
 </div>
 {{if .ImageURL}}
@@ -150,6 +150,15 @@ document.addEventListener('alpine:init', function() {
       purchaseItemTitle: '',
       purchasePrice: '',
       purchaseNotes: '',
+      step: 'input',
+      wishlistUrl: '',
+      loading: false,
+      importing: false,
+      total: 0,
+      newCount: 0,
+      skipped: 0,
+      items: [],
+      error: '',
       openPurchase: function(id, price, title) {
         this.purchaseItemId = id;
         this.purchaseItemTitle = title;
@@ -169,29 +178,16 @@ document.addEventListener('alpine:init', function() {
           if (r.ok) { location.reload(); }
         });
         this.showPurchaseModal = false;
-      }
-    };
-  });
-  Alpine.data('wishlistImport', function() {
-    return {
-      step: 'input',
-      url: '',
-      loading: false,
-      importing: false,
-      total: 0,
-      newCount: 0,
-      skipped: 0,
-      items: [],
-      error: '',
-      scrape: function() {
-        if (!this.url) return;
+      },
+      scrapeWishlist: function() {
+        if (!this.wishlistUrl) return;
         this.loading = true;
         this.error = '';
         this.step = 'loading';
         fetch('/api/import/wishlist', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({url: this.url})
+          body: JSON.stringify({url: this.wishlistUrl})
         }).then(function(r) {
           return r.json().then(function(data) {
             if (!r.ok) { throw new Error(data.error || 'Scrape failed'); }
@@ -248,9 +244,9 @@ document.addEventListener('alpine:init', function() {
           this.importing = false;
         }.bind(this));
       },
-      reset: function() {
+      resetWishlist: function() {
         this.step = 'input';
-        this.url = '';
+        this.wishlistUrl = '';
         this.items = [];
         this.error = '';
         this.total = 0;
@@ -262,19 +258,19 @@ document.addEventListener('alpine:init', function() {
 });
 </script>
 </div>
-<div x-data="wishlistImport" x-show="showWishlistModal" x-cloak class="fixed inset-0 z-[200] flex items-center justify-center p-md" style="background:rgba(0,0,0,0.6)" @click.self="showWishlistModal = false; reset()">
+<div x-show="showWishlistModal" x-cloak class="fixed inset-0 z-[200] flex items-center justify-center p-md" style="background:rgba(0,0,0,0.6)" @click.self="showWishlistModal = false; resetWishlist()">
 <div class="glass-card rounded-2xl p-lg w-full max-w-lg max-h-[85vh] flex flex-col" @click.stop>
 <div class="flex items-center justify-between mb-lg shrink-0">
 <h3 class="font-headline-md text-headline-md text-on-surface">Import Amazon Wishlist</h3>
-<button class="text-on-surface-variant hover:text-on-surface transition-colors" @click="showWishlistModal = false; reset()"><span class="material-symbols-outlined">close</span></button>
+<button class="text-on-surface-variant hover:text-on-surface transition-colors" @click="showWishlistModal = false; resetWishlist()"><span class="material-symbols-outlined">close</span></button>
 </div>
 <template x-if="step === 'input'">
 <div class="flex flex-col gap-md">
 <p class="font-body-md text-body-md text-on-surface-variant">Paste your Amazon wishlist URL to import all items.</p>
 <div class="bg-surface-container-low border border-outline-variant/30 rounded-xl px-4 py-3 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_1px_#375BD2]">
-<input class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-body-md text-body-md" type="url" x-model="url" placeholder="https://www.amazon.com/hz/wishlist/ls/..."/>
+<input class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-body-md text-body-md" type="url" x-model="wishlistUrl" placeholder="https://www.amazon.com/hz/wishlist/ls/..."/>
 </div>
-<button class="bg-primary text-on-primary px-xl py-3 rounded-xl font-bold hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2" @click="scrape" x-bind:disabled="!url">
+<button class="bg-primary text-on-primary px-xl py-3 rounded-xl font-bold hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2" @click="scrapeWishlist" x-bind:disabled="!wishlistUrl">
 <span class="material-symbols-outlined">search</span> Scrape Wishlist
 </button>
 </div>
@@ -311,7 +307,7 @@ document.addEventListener('alpine:init', function() {
 </template>
 </div>
 <div class="flex justify-end gap-3 pt-md border-t border-outline-variant/10 shrink-0">
-<button class="border border-outline-variant/30 text-on-surface px-5 py-2 rounded-xl font-label-sm text-label-sm hover:bg-surface-container-high transition-colors" @click="showWishlistModal = false; reset()">Cancel</button>
+<button class="border border-outline-variant/30 text-on-surface px-5 py-2 rounded-xl font-label-sm text-label-sm hover:bg-surface-container-high transition-colors" @click="showWishlistModal = false; resetWishlist()">Cancel</button>
 <button class="bg-primary text-on-primary px-6 py-2 rounded-xl font-label-md text-label-md hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-primary/20 flex items-center gap-2" @click="importAll" x-bind:disabled="importing">
 <template x-if="importing"><span class="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin"></span></template>
 <span x-text="importing ? 'Importing...' : 'Import All (' + newCount + ')'"></span>
@@ -323,7 +319,7 @@ document.addEventListener('alpine:init', function() {
 <div class="flex flex-col items-center justify-center py-16 gap-md">
 <span class="text-emerald-500 material-symbols-outlined text-4xl">check_circle</span>
 <p class="font-body-lg text-body-lg text-on-surface-variant">All items from this wishlist are already in your list.</p>
-<button class="border border-outline-variant/30 text-on-surface px-5 py-2 rounded-xl font-label-sm text-label-sm hover:bg-surface-container-high transition-colors mt-md" @click="showWishlistModal = false; reset()">Close</button>
+<button class="border border-outline-variant/30 text-on-surface px-5 py-2 rounded-xl font-label-sm text-label-sm hover:bg-surface-container-high transition-colors mt-md" @click="showWishlistModal = false; resetWishlist()">Close</button>
 </div>
 </template>
 <template x-if="step === 'error'">
@@ -332,7 +328,7 @@ document.addEventListener('alpine:init', function() {
 <p class="font-body-lg text-body-lg text-on-surface-variant text-center" x-text="error"></p>
 <div class="flex gap-3 mt-md">
 <button class="border border-outline-variant/30 text-on-surface px-5 py-2 rounded-xl font-label-sm text-label-sm hover:bg-surface-container-high transition-colors" @click="step = 'input'; error = ''">Try Again</button>
-<button class="border border-outline-variant/30 text-on-surface px-5 py-2 rounded-xl font-label-sm text-label-sm hover:bg-surface-container-high transition-colors" @click="showWishlistModal = false; reset()">Close</button>
+<button class="border border-outline-variant/30 text-on-surface px-5 py-2 rounded-xl font-label-sm text-label-sm hover:bg-surface-container-high transition-colors" @click="showWishlistModal = false; resetWishlist()">Close</button>
 </div>
 </div>
 </template>
@@ -340,7 +336,7 @@ document.addEventListener('alpine:init', function() {
 <div class="flex flex-col items-center justify-center py-16 gap-md">
 <span class="text-emerald-500 material-symbols-outlined text-4xl">check_circle</span>
 <p class="font-body-lg text-body-lg text-on-surface font-semibold">Import complete!</p>
-<button class="border border-outline-variant/30 text-on-surface px-5 py-2 rounded-xl font-label-sm text-label-sm hover:bg-surface-container-high transition-colors" @click="showWishlistModal = false; reset()">Close</button>
+<button class="border border-outline-variant/30 text-on-surface px-5 py-2 rounded-xl font-label-sm text-label-sm hover:bg-surface-container-high transition-colors" @click="showWishlistModal = false; resetWishlist()">Close</button>
 </div>
 </template>
 </div>

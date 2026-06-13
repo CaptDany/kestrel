@@ -104,14 +104,15 @@ tailwind.config = {
 {{$bgValue := index .Settings "background_value"}}
 {{$bgOverlay := index .Settings "background_overlay"}}
 {{if eq $bgMode "image"}}
-body { background: url('{{$bgValue}}') center/cover fixed; color: #e2e1ec; font-family: 'Inter', sans-serif; position: relative; }
-body::before { content: ''; position: fixed; inset: 0; background: rgba(0,0,0,{{$bgOverlay}}); z-index: -1; pointer-events: none; }
-@media (max-width: 767px) {
-  body { background-attachment: scroll; }
-}
+html { background: #0A0B0D; }
+body { background: transparent; color: #e2e1ec; font-family: 'Inter', sans-serif; }
+#bg-image { position: fixed; inset: 0; z-index: -2; background: url('{{$bgValue}}') center/cover; pointer-events: none; }
+#bg-image::after { content: ''; position: fixed; inset: 0; background: rgba(0,0,0,{{$bgOverlay}}); pointer-events: none; }
 {{else if eq $bgMode "gradient"}}
+html { background: {{$bgValue}}; }
 body { background: {{$bgValue}}; color: #e2e1ec; font-family: 'Inter', sans-serif; }
 {{else}}
+html { background: {{$bgValue}}; }
 body { background-color: {{$bgValue}}; color: #e2e1ec; font-family: 'Inter', sans-serif; }
 {{end}}
 .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
@@ -141,9 +142,9 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-app
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 .glass-glow { box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.05); }
-.glass-nav { background: rgba(18, 19, 26, 0.96); }
-@supports (backdrop-filter: blur(1px)) {
-  .glass-nav { background: rgba(18, 19, 26, 0.82); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.glass-nav { background: rgba(18, 19, 26, 0.96); will-change: transform; }
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .glass-nav { background: rgba(18, 19, 26, 0.82); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); will-change: transform; }
 }
 [x-cloak] { display: none !important; }
 @media (display-mode: standalone) {
@@ -213,6 +214,7 @@ function confirmAction(msg, callback) { Alpine.store('confirm').fire(msg, callba
 </script>
 </head>
 <body class="overflow-x-hidden">
+{{if eq (index .Settings "background_mode") "image"}}<div id="bg-image"></div>{{end}}
 <div class="flex min-h-screen">
 <aside class="fixed left-0 top-0 h-screen w-[240px] glass-nav flex-col gap-lg p-md hidden md:flex z-50 border-r border-outline-variant/10">
 <div class="flex items-center gap-sm px-2">
@@ -231,10 +233,6 @@ function confirmAction(msg, callback) { Alpine.store('confirm').fire(msg, callba
 <a class="nav-link flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all rounded-lg" href="/history">
 <span class="material-symbols-outlined">receipt_long</span><span class="font-label-md text-label-md">History</span>
 </a>
-<button class="nav-link flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all rounded-lg w-full text-left relative" @click="$store.notif.toggle()">
-<span class="material-symbols-outlined">notifications</span><span class="font-label-md text-label-md">Notifications</span>
-<span x-show="$store.notif.unread > 0" x-text="$store.notif.unread" class="ml-auto bg-primary text-on-primary text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1" style="display:none"></span>
-</button>
 <a class="nav-link flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all rounded-lg" href="/settings">
 <span class="material-symbols-outlined">settings</span><span class="font-label-md text-label-md">Settings</span>
 </a>
