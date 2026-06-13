@@ -26,6 +26,10 @@ var templateFS embed.FS
 //go:embed ui/static
 var staticFS embed.FS
 
+func init() {
+	log.SetFlags(0)
+}
+
 func main() {
 	cfg := config.Load()
 

@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -20,10 +21,30 @@ type Server struct {
 	Handler *handler.Handler
 }
 
+func requestLogger(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		lrw := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
+		start := time.Now()
+		next.ServeHTTP(lrw, r)
+		path := r.URL.Path
+		if q := r.URL.RawQuery; q != "" {
+			path += "?" + q
+		}
+		from := r.RemoteAddr
+		if idx := strings.LastIndex(from, ":"); idx != -1 {
+			from = from[:idx]
+		}
+		log.Printf(`"%s %s %s" from %s - %d %dB in %s`,
+			r.Method, path, r.Proto, from,
+			lrw.Status(), lrw.BytesWritten(), time.Since(start),
+		)
+	})
+}
+
 func New(addr string, tpl *template.Template, staticFS http.FileSystem) *Server {
 	s := &Server{Addr: addr, Tpl: tpl}
 	s.Router = chi.NewRouter()
-	s.Router.Use(middleware.Logger)
+	s.Router.Use(requestLogger)
 	s.Router.Use(middleware.Recoverer)
 	s.Router.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
