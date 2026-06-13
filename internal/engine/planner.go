@@ -76,6 +76,9 @@ func (p *Planner) Generate() error {
 		if purchaseMode == "one" {
 			for _, item := range unscheduled {
 				saved := itemSavings[item.ID]
+				if item.Price == nil {
+					continue
+				}
 				needed := *item.Price - saved
 				if needed <= remaining {
 					entry := &db.PurchasePlan{
@@ -112,6 +115,9 @@ func (p *Planner) Generate() error {
 		} else {
 			for _, item := range unscheduled {
 				saved := itemSavings[item.ID]
+				if item.Price == nil {
+					continue
+				}
 				needed := *item.Price - saved
 				if needed <= remaining {
 					entry := &db.PurchasePlan{

@@ -377,6 +377,12 @@ func ExtractWishlist(rawURL string) ([]*Result, error) {
 			items = doc.Find(".a-list-item")
 		}
 		if items.Length() == 0 {
+			if page == 1 {
+				gItems := doc.Find("#g-items")
+				if gItems.Length() == 0 {
+					return nil, fmt.Errorf("this wishlist is private or restricted — make it public before importing")
+				}
+			}
 			break
 		}
 

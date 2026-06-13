@@ -406,11 +406,14 @@ func (h *Handler) ImportWishlist(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	if newItems == nil {
+		newItems = []extractor.Result{}
+	}
 	jsonResp(w, 200, map[string]interface{}{
-		"total":  len(results),
-		"new":    len(newItems),
+		"total":   len(results),
+		"new":     len(newItems),
 		"skipped": len(results) - len(newItems),
-		"items":  newItems,
+		"items":   newItems,
 	})
 }
 
@@ -603,6 +606,9 @@ func (h *Handler) SendTestNotification(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetNotifications(w http.ResponseWriter, r *http.Request) {
 	unread, _ := db.GetUnreadNotificationCount()
 	items, _ := db.GetNotifications(50, 0)
+	if items == nil {
+		items = []db.NotificationLog{}
+	}
 	jsonResp(w, 200, map[string]interface{}{
 		"unread": unread,
 		"items":  items,
