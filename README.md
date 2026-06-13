@@ -1,6 +1,6 @@
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="ui/static/logo/kestrel.svg">
-  <img alt="kestrel" src="ui/static/logo/kestrel.svg" height="36">
+  <source media="(prefers-color-scheme: dark)" srcset="ui/static/logo/imagotype-light.svg">
+  <img alt="kestrel" src="ui/static/logo/imagotype-light.svg" height="36">
 </picture>
 
 [kestrel](https://github.com/CaptDany/kestrel) is a purchase planner that helps you calendarize e-commerce purchases based on your paydays and budget.
