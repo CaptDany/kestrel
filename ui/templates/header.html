@@ -214,8 +214,8 @@
             }
             [x-cloak] { display: none !important; }
             @media (display-mode: standalone) {
-              .mobile-topnav { padding-top: calc(16px + max(constant(safe-area-inset-top, 20px), 20px)); padding-top: calc(16px + max(env(safe-area-inset-top, 20px), 20px)); }
-              .mobile-bottomnav { bottom: constant(safe-area-inset-bottom, 0px); bottom: env(safe-area-inset-bottom, 0px); }
+              .mobile-topnav { padding-top: calc(16px + max(constant(safe-area-inset-top, 20px), 20px)) !important; padding-top: calc(16px + max(env(safe-area-inset-top, 20px), 20px)) !important; }
+              .mobile-bottomnav { bottom: constant(safe-area-inset-bottom, 0px) !important; bottom: env(safe-area-inset-bottom, 0px) !important; }
             }
             @media (display-mode: standalone) and (max-width: 767px) {
               main { padding-top: calc(68px + constant(safe-area-inset-top, 0px)) !important; padding-top: calc(68px + env(safe-area-inset-top, 0px)) !important; }
