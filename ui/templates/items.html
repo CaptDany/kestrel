@@ -20,7 +20,7 @@
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-lg">
 {{range $items}}
 <div class="glass-card rounded-xl p-lg flex flex-col gap-md relative group" id="item-{{.ID}}">
-<div class="flex justify-between items-start">
+<div class="flex justify-between items-start mb-3">
 <span class="bg-primary/10 text-primary px-3 py-1 rounded-full font-label-sm text-label-sm uppercase tracking-wider">{{if .Category}}{{.Category}}{{else}}General{{end}}</span>
 <div class="flex items-center gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
 <a href="/items/{{.ID}}/edit" class="text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-[20px]">edit</span></a>
@@ -28,7 +28,7 @@
 </div>
 </div>
 {{if .ImageURL}}
-<div class="-mx-lg -mt-lg mb-3 h-44 rounded-t-xl overflow-hidden bg-surface-container-high">
+<div class="-mx-lg mb-3 h-44 rounded-t-xl overflow-hidden bg-surface-container-high">
 <img src="{{.ImageURL}}" alt="{{.Title}}" class="w-full h-full object-cover" onerror="this.style.display='none'"/>
 </div>
 {{end}}
@@ -40,7 +40,7 @@
 <div class="grid grid-cols-2 gap-md mt-2 p-md bg-surface-container-lowest rounded-lg border border-outline-variant/10">
 <div>
 <p class="font-label-sm text-label-sm text-on-surface-variant uppercase">Desired Date</p>
-<p class="font-body-sm text-body-sm text-on-surface mt-1">{{if .DesiredDate}}{{derefs .DesiredDate}}{{else}}—{{end}}</p>
+<p class="font-body-sm text-body-sm text-on-surface mt-1">{{if .DesiredDate}}{{derefs .DesiredDate}}{{else}}<span class="text-on-surface-variant/60 italic">As soon as possible</span>{{end}}</p>
 </div>
 <div class="flex flex-col items-end">
 <p class="font-label-sm text-label-sm text-on-surface-variant uppercase">Confirmed</p>
@@ -85,7 +85,7 @@
 <span class="material-symbols-outlined text-4xl text-on-surface-variant">inventory_2</span>
 </div>
 <h3 class="font-headline-lg text-headline-lg-mobile text-on-surface mb-md">Your list is a blank canvas</h3>
-<p class="font-body-lg text-body-lg text-on-surface-variant mb-xl">Start planning your future acquisitions with Kestrel. Every great purchase begins with a clear vision.</p>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-xl">Start planning your future acquisitions. Every great purchase begins with a clear vision.</p>
 <a href="/items/new" class="bg-primary text-on-primary px-xl py-md rounded-xl font-bold hover:brightness-110 active:scale-95 transition-all">Add your first item</a>
 </div>
 {{end}}

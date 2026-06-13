@@ -293,13 +293,16 @@ func sortItems(items []db.Item, criteria string) {
 		case "date_added":
 			return items[i].CreatedAt < items[j].CreatedAt
 		case "desired_date":
+			if items[i].DesiredDate == nil && items[j].DesiredDate != nil {
+				return true
+			}
+			if items[i].DesiredDate != nil && items[j].DesiredDate == nil {
+				return false
+			}
 			if items[i].DesiredDate != nil && items[j].DesiredDate != nil {
 				return *items[i].DesiredDate < *items[j].DesiredDate
 			}
-			if items[i].DesiredDate != nil {
-				return true
-			}
-			return false
+			return items[i].CreatedAt < items[j].CreatedAt
 		default:
 			return pi < pj
 		}

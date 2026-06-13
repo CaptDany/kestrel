@@ -66,6 +66,22 @@ func parseID(r *http.Request) (int64, error) {
 	return strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 }
 
+func parseFloatPtr(v interface{}) *float64 {
+	if v == nil {
+		return nil
+	}
+	f := v.(float64)
+	return &f
+}
+
+func parseStringPtr(v interface{}) *string {
+	if v == nil {
+		return nil
+	}
+	s := v.(string)
+	return &s
+}
+
 // ─── Dashboard ──────────────────────────────────────────────────────────────
 
 func (h *Handler) Dashboard(w http.ResponseWriter, r *http.Request) {
@@ -212,13 +228,31 @@ func (h *Handler) UpdateItem(w http.ResponseWriter, r *http.Request) {
 		jsonErr(w, 400, "invalid id")
 		return
 	}
-	var item db.Item
-	if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
+	existing, err := db.GetItem(id)
+	if err != nil {
+		jsonErr(w, 500, err.Error())
+		return
+	}
+
+	var incoming map[string]interface{}
+	if err := json.NewDecoder(r.Body).Decode(&incoming); err != nil {
 		jsonErr(w, 400, "invalid json")
 		return
 	}
-	item.ID = id
-	if err := db.UpdateItem(&item); err != nil {
+
+	if v, ok := incoming["url"]; ok { existing.URL = v.(string) }
+	if v, ok := incoming["title"]; ok { existing.Title = v.(string) }
+	if v, ok := incoming["price"]; ok { existing.Price = parseFloatPtr(v) }
+	if v, ok := incoming["currency"]; ok { existing.Currency = v.(string) }
+	if v, ok := incoming["priority"]; ok { existing.Priority = int(v.(float64)) }
+	if v, ok := incoming["category"]; ok { existing.Category = v.(string) }
+	if v, ok := incoming["notes"]; ok { existing.Notes = v.(string) }
+	if v, ok := incoming["status"]; ok { existing.Status = v.(string) }
+	if v, ok := incoming["desired_date"]; ok { existing.DesiredDate = parseStringPtr(v) }
+	if v, ok := incoming["price_confirmed"]; ok { existing.PriceConfirmed = int(v.(float64)) }
+	if v, ok := incoming["image_url"]; ok { existing.ImageURL = v.(string) }
+
+	if err := db.UpdateItem(existing); err != nil {
 		jsonErr(w, 500, err.Error())
 		return
 	}
@@ -316,6 +350,23 @@ func (h *Handler) SchedulePage(w http.ResponseWriter, r *http.Request) {
 	items, _ := db.GetItems("")
 	paydays, _ := db.GetPaydays()
 	settings, _ := db.GetAllSettings()
+
+	if len(plan) == 0 {
+		pendingItems, _ := db.GetPendingAndSavingItems()
+		hasActive := false
+		for _, pd := range paydays {
+			if pd.Active == 1 {
+				hasActive = true
+				break
+			}
+		}
+		if len(pendingItems) > 0 && hasActive {
+			planner := engine.NewPlanner(settings, paydays)
+			if err := planner.Generate(); err == nil {
+				plan, _ = db.GetPlan()
+			}
+		}
+	}
 
 	h.render(w, "schedule.html", pageData{
 		Title: "Schedule",
