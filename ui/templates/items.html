@@ -3,7 +3,7 @@
 <div x-data="purchaseModal">
 <div class="flex flex-col md:flex-row md:items-center justify-between gap-lg mb-xl">
 <div>
-<h2 class="font-headline-lg text-headline-lg font-bold text-on-surface">Planned Items</h2>
+<h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg font-bold text-on-surface">Planned Items</h2>
 <p class="font-body-lg text-body-lg text-on-surface-variant">Manage and track your upcoming acquisitions.</p>
 </div>
 <div class="flex items-center gap-3">
@@ -39,7 +39,7 @@
 {{end}}
 <div class="flex flex-col gap-xs mt-2">
 <a href="{{.URL}}" target="_blank" rel="noopener" class="font-headline-md text-headline-md hover:text-primary transition-colors {{if eq .Status "purchased"}}line-through text-on-surface-variant{{end}}">{{.Title}}</a>
-<p class="font-display-lg text-headline-lg text-primary">{{if .Price}}{{printf "$%.2f" (deref .Price)}}{{else}}—{{end}}</p>
+<p class="font-display-lg text-headline-lg-mobile md:text-headline-lg text-primary">{{if .Price}}{{printf "$%.2f" (deref .Price)}}{{else}}—{{end}}</p>
 </div>
 <div class="flex items-center gap-1 text-tertiary priority-stars" data-priority="{{.Priority}}"></div>
 <div class="grid grid-cols-2 gap-md mt-2 p-md bg-surface-container-lowest rounded-lg border border-outline-variant/10">

@@ -4,7 +4,7 @@
 {{$settings := $data.settings}}
 <header class="flex justify-between items-center w-full mb-xl">
 <div class="flex flex-col">
-<h1 class="font-headline-lg text-headline-lg font-bold text-primary">Schedule</h1>
+<h1 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg font-bold text-primary">Schedule</h1>
 <p class="font-body-lg text-body-lg text-on-surface-variant">Manage your purchasing timeline</p>
 </div>
 <button class="bg-primary-container text-on-primary-container px-6 py-2.5 rounded-full font-label-md flex items-center gap-2 hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-primary-container/20" id="generateBtn" hx-post="/api/plan/generate" hx-ext="json-enc" hx-target="#plan-msg" hx-indicator="#plan-spinner">
@@ -18,14 +18,14 @@
 <div class="tonal-layer-1 p-lg rounded-xl">
 <span class="font-label-md text-on-surface-variant block mb-sm">Budget per Cycle</span>
 <div class="flex items-baseline gap-2">
-<span class="font-headline-lg text-headline-lg text-primary">{{index $settings "budget_amount"}} {{index $settings "currency"}}</span>
+<span class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary">{{index $settings "budget_amount"}} {{index $settings "currency"}}</span>
 </div>
 <div class="mt-2 text-xs text-on-surface-variant">Mode: {{labelize (index $settings "budget_mode")}}</div>
 </div>
 <div class="tonal-layer-1 p-lg rounded-xl">
 <span class="font-label-md text-on-surface-variant block mb-sm">Scheduled Items</span>
 <div class="flex items-baseline gap-2">
-<span class="font-headline-lg text-headline-lg text-on-surface">{{len $plan}}</span>
+<span class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface">{{len $plan}}</span>
 <span class="font-label-sm text-on-surface-variant">Items</span>
 </div>
 </div>
