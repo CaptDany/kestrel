@@ -106,10 +106,15 @@ x-text="cat"
 </div>
 </section>
 <section class="relative rounded-2xl overflow-hidden aspect-video border border-outline-variant/20 bg-surface-container-low flex items-center justify-center">
+<template x-if="!imageUrl">
 <div class="flex flex-col items-center justify-center p-lg text-center">
 <span class="material-symbols-outlined text-4xl text-on-surface-variant mb-2">image</span>
 <p class="font-label-md text-label-md text-on-surface-variant">Product image will appear after scrape</p>
 </div>
+</template>
+<template x-if="imageUrl">
+<img :src="imageUrl" alt="" class="w-full h-full object-cover" onerror="this.style.display='none'"/>
+</template>
 </section>
 </div>
 </div>
@@ -126,7 +131,7 @@ function itemForm() {
     id: {{$item.ID}}, url: '{{$item.URL}}', title: '{{$item.Title}}',
     price: {{if $item.Price}}{{$item.Price}}{{else}}''{{end}}, currency: '{{$item.Currency}}',
     priority: {{$item.Priority}}, category: '{{$item.Category}}', notes: '{{$item.Notes}}',
-    desiredDate: '{{derefs $item.DesiredDate}}',
+    desiredDate: '{{derefs $item.DesiredDate}}', imageUrl: '{{$item.ImageURL}}',
     scrapeUrl() { this.scrape(); },
     scrape() {
       var btn = document.getElementById('scrape-btn');
@@ -139,6 +144,7 @@ function itemForm() {
         if (data.title) this.title = data.title;
         if (data.price) this.price = data.price;
         if (data.currency) this.currency = data.currency;
+        if (data.image_url) this.imageUrl = data.image_url;
         btn.disabled = false; icon.classList.remove('animate-spin'); icon.textContent = 'check'; text.textContent = 'Done';
         setTimeout(function() { icon.textContent = 'bolt'; text.textContent = 'Scrape'; }, 2000);
       }.bind(this))
@@ -153,13 +159,14 @@ function itemForm() {
       fetch(url, { method: method, headers:{'Content-Type':'application/json'},
         body: JSON.stringify({url:this.url, title:this.title, price:this.price?parseFloat(this.price):null,
           currency:this.currency||'USD', priority:this.priority, category:this.category,
-          notes:this.notes, desired_date:this.desiredDate||null, status:'pending', price_confirmed:this.price?1:0})
+          notes:this.notes, desired_date:this.desiredDate||null, status:'pending', price_confirmed:this.price?1:0,
+          image_url:this.imageUrl||null})
       }).then(function(r) { if(r.ok) window.location.href='/items'; });
     }
   };
 {{else}}
   return {
-    id:0, url:'', title:'', price:'', currency:'USD', priority:3, category:'', notes:'', desiredDate:'',
+    id:0, url:'', title:'', price:'', currency:'USD', priority:3, category:'', notes:'', desiredDate:'', imageUrl:'',
     scrapeUrl() { this.scrape(); },
     scrape() {
       var btn = document.getElementById('scrape-btn');
@@ -172,6 +179,7 @@ function itemForm() {
         if (data.title) this.title = data.title;
         if (data.price) this.price = data.price;
         if (data.currency) this.currency = data.currency;
+        if (data.image_url) this.imageUrl = data.image_url;
         btn.disabled = false; icon.classList.remove('animate-spin'); icon.textContent = 'check'; text.textContent = 'Done';
         setTimeout(function() { icon.textContent = 'bolt'; text.textContent = 'Scrape'; }, 2000);
       }.bind(this))
@@ -184,7 +192,8 @@ function itemForm() {
       fetch('/api/items', { method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({url:this.url, title:this.title, price:this.price?parseFloat(this.price):null,
           currency:this.currency||'USD', priority:this.priority, category:this.category,
-          notes:this.notes, desired_date:this.desiredDate||null, status:'pending', price_confirmed:this.price?1:0})
+          notes:this.notes, desired_date:this.desiredDate||null, status:'pending', price_confirmed:this.price?1:0,
+          image_url:this.imageUrl||null})
       }).then(function(r) { if(r.ok) window.location.href='/items'; });
     }
   };

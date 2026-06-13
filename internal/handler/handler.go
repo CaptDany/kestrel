@@ -66,11 +66,31 @@ func parseID(r *http.Request) (int64, error) {
 	return strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 }
 
-func parseFloatPtr(v interface{}) *float64 {
-	if v == nil {
-		return nil
+func toFloat64(v interface{}) float64 {
+	switch val := v.(type) {
+	case float64:
+		return val
+	case string:
+		f, _ := strconv.ParseFloat(val, 64)
+		return f
 	}
-	f := v.(float64)
+	return 0
+}
+
+func toInt(v interface{}) int {
+	return int(toFloat64(v))
+}
+
+func toString(v interface{}) string {
+	if v == nil {
+		return ""
+	}
+	s, _ := v.(string)
+	return s
+}
+
+func parseFloatPtr(v interface{}) *float64 {
+	f := toFloat64(v)
 	return &f
 }
 
@@ -78,7 +98,7 @@ func parseStringPtr(v interface{}) *string {
 	if v == nil {
 		return nil
 	}
-	s := v.(string)
+	s := toString(v)
 	return &s
 }
 
@@ -240,17 +260,17 @@ func (h *Handler) UpdateItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if v, ok := incoming["url"]; ok { existing.URL = v.(string) }
-	if v, ok := incoming["title"]; ok { existing.Title = v.(string) }
+	if v, ok := incoming["url"]; ok { existing.URL = toString(v) }
+	if v, ok := incoming["title"]; ok { existing.Title = toString(v) }
 	if v, ok := incoming["price"]; ok { existing.Price = parseFloatPtr(v) }
-	if v, ok := incoming["currency"]; ok { existing.Currency = v.(string) }
-	if v, ok := incoming["priority"]; ok { existing.Priority = int(v.(float64)) }
-	if v, ok := incoming["category"]; ok { existing.Category = v.(string) }
-	if v, ok := incoming["notes"]; ok { existing.Notes = v.(string) }
-	if v, ok := incoming["status"]; ok { existing.Status = v.(string) }
+	if v, ok := incoming["currency"]; ok { existing.Currency = toString(v) }
+	if v, ok := incoming["priority"]; ok { existing.Priority = toInt(v) }
+	if v, ok := incoming["category"]; ok { existing.Category = toString(v) }
+	if v, ok := incoming["notes"]; ok { existing.Notes = toString(v) }
+	if v, ok := incoming["status"]; ok { existing.Status = toString(v) }
 	if v, ok := incoming["desired_date"]; ok { existing.DesiredDate = parseStringPtr(v) }
-	if v, ok := incoming["price_confirmed"]; ok { existing.PriceConfirmed = int(v.(float64)) }
-	if v, ok := incoming["image_url"]; ok { existing.ImageURL = v.(string) }
+	if v, ok := incoming["price_confirmed"]; ok { existing.PriceConfirmed = toInt(v) }
+	if v, ok := incoming["image_url"]; ok { existing.ImageURL = toString(v) }
 
 	if err := db.UpdateItem(existing); err != nil {
 		jsonErr(w, 500, err.Error())
@@ -270,7 +290,7 @@ func (h *Handler) DeleteItem(w http.ResponseWriter, r *http.Request) {
 		jsonErr(w, 500, err.Error())
 		return
 	}
-	jsonResp(w, 200, map[string]string{"status": "deleted"})
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *Handler) PurchaseItem(w http.ResponseWriter, r *http.Request) {

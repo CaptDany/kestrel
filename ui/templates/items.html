@@ -24,7 +24,7 @@
 <span class="bg-primary/10 text-primary px-3 py-1 rounded-full font-label-sm text-label-sm uppercase tracking-wider">{{if .Category}}{{.Category}}{{else}}General{{end}}</span>
 <div class="flex items-center gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
 <a href="/items/{{.ID}}/edit" class="text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-[20px]">edit</span></a>
-<button class="text-on-surface-variant hover:text-error transition-colors" hx-delete="/api/items/{{.ID}}" hx-target="#item-{{.ID}}" hx-swap="outerHTML" hx-confirm="Delete this item?"><span class="material-symbols-outlined text-[20px]">delete</span></button>
+<button class="text-on-surface-variant hover:text-error transition-colors" hx-delete="/api/items/{{.ID}}" hx-target="#item-{{.ID}}" hx-swap="delete" hx-confirm="Delete this item?"><span class="material-symbols-outlined text-[20px]">delete</span></button>
 </div>
 </div>
 {{if .ImageURL}}

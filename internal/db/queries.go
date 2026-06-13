@@ -89,7 +89,7 @@ func getItemPrice(id int64) (*float64, error) {
 
 func GetPendingAndSavingItems() ([]Item, error) {
 	return scanItems(
-		`SELECT id, url, title, price, currency, priority, category, notes, status, desired_date, created_at, updated_at, purchased_at, price_confirmed
+		`SELECT id, url, title, price, currency, priority, category, notes, status, desired_date, created_at, updated_at, purchased_at, price_confirmed, image_url
 		 FROM items WHERE status IN ('pending', 'saving') ORDER BY
 		 CASE WHEN status = 'saving' THEN 0 ELSE 1 END, created_at ASC`,
 	)
@@ -447,7 +447,7 @@ func GetPriceHistory(itemID int64, limit int) ([]PriceHistory, error) {
 // GetTrackableItems returns items with confirmed prices, not purchased, that have URLs.
 func GetTrackableItems() ([]Item, error) {
 	return scanItems(
-		`SELECT id, url, title, price, currency, priority, category, notes, status, desired_date, created_at, updated_at, purchased_at, price_confirmed
+		`SELECT id, url, title, price, currency, priority, category, notes, status, desired_date, created_at, updated_at, purchased_at, price_confirmed, image_url
 		 FROM items
 		 WHERE price_confirmed = 1 AND status != 'purchased' AND url != ''
 		 ORDER BY id ASC`,
