@@ -440,63 +440,61 @@
 <span class="material-symbols-outlined text-[28px]">add</span>
 </a>
 <script>
-document.addEventListener('alpine:init', function() {
-  Alpine.data('scrapeModal', function() {
-    return {
-      show: false,
-      scraping: false,
-      url: '',
-      title: '',
-      price: null,
-      currency: 'USD',
-      imageUrl: '',
-      scrapeUrl: function() {
-        var input = this.$el.querySelector('input[name="url"]');
-        var url = input.value.trim();
-        if (!url) return;
-        this.scraping = true;
-        fetch('/api/scrape', { method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({url: url})
-        }).then(function(r) {
-          if (r.ok) return r.json();
-          return r.json().then(function(e) { throw new Error(e.error || 'Scrape failed'); });
-        }).then(function(data) {
-          this.scraping = false;
-          this.url = data.url;
-          this.title = data.title || 'Unknown';
-          this.price = data.price;
-          this.currency = data.currency || 'USD';
-          this.imageUrl = data.image_url || '';
-          this.show = true;
-        }.bind(this)).catch(function(err) {
-          this.scraping = false;
-          toast(err.message || 'Scrape failed - try a different URL', 'error');
-        }.bind(this));
-      },
-      open: function(data) {
+function scrapeModal() {
+  return {
+    show: false,
+    scraping: false,
+    url: '',
+    title: '',
+    price: null,
+    currency: 'USD',
+    imageUrl: '',
+    scrapeUrl() {
+      var input = this.$el.querySelector('input[name="url"]');
+      var url = input.value.trim();
+      if (!url) return;
+      this.scraping = true;
+      fetch('/api/scrape', { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({url: url})
+      }).then(function(r) {
+        if (r.ok) return r.json();
+        return r.json().then(function(e) { throw new Error(e.error || 'Scrape failed'); });
+      }).then(function(data) {
+        this.scraping = false;
         this.url = data.url;
         this.title = data.title || 'Unknown';
         this.price = data.price;
         this.currency = data.currency || 'USD';
         this.imageUrl = data.image_url || '';
         this.show = true;
-      },
-      confirm: function() {
-        fetch('/api/items', { method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({
-            url: this.url, title: this.title, price: this.price,
-            currency: this.currency, price_confirmed: this.price !== null ? 1 : 0,
-            image_url: this.imageUrl
-          })
-        }).then(function(r) {
-          if (r.ok) { toast('Item added!'); setTimeout(function() { location.reload(); }, 1000); }
-          else { toast('Failed to add item', 'error'); }
-        });
-        this.show = false;
-      }
-    };
-  });
-});
+      }.bind(this)).catch(function(err) {
+        this.scraping = false;
+        toast(err.message || 'Scrape failed - try a different URL', 'error');
+      }.bind(this));
+    },
+    open(data) {
+      this.url = data.url;
+      this.title = data.title || 'Unknown';
+      this.price = data.price;
+      this.currency = data.currency || 'USD';
+      this.imageUrl = data.image_url || '';
+      this.show = true;
+    },
+    confirm() {
+      fetch('/api/items', { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          url: this.url, title: this.title, price: this.price,
+          currency: this.currency, price_confirmed: this.price !== null ? 1 : 0,
+          image_url: this.imageUrl
+        })
+      }).then(function(r) {
+        if (r.ok) { toast('Item added!'); setTimeout(function() { location.reload(); }, 1000); }
+        else { toast('Failed to add item', 'error'); }
+      });
+      this.show = false;
+    }
+  };
+}
 document.body.addEventListener('htmx:afterRequest', function(evt) {
   if (evt.target.id === 'plan-msg' && evt.detail.successful) {
     toast('Plan regenerated!');
