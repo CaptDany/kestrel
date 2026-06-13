@@ -29,6 +29,52 @@ func GetItem(id int64) (*Item, error) {
 	return &items[0], nil
 }
 
+func GetItemByURL(url string) (*Item, error) {
+	items, err := scanItems("SELECT id, url, title, price, currency, priority, category, notes, status, desired_date, created_at, updated_at, purchased_at, price_confirmed, image_url FROM items WHERE url = ?", url)
+	if err != nil {
+		return nil, err
+	}
+	if len(items) == 0 {
+		return nil, nil
+	}
+	return &items[0], nil
+}
+
+func BulkCreateItems(items []*Item) ([]*Item, error) {
+	tx, err := DB.Begin()
+	if err != nil {
+		return nil, fmt.Errorf("begin tx: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	stmt, err := tx.Prepare(
+		`INSERT INTO items (url, title, price, currency, priority, category, notes, status, desired_date, price_confirmed, image_url)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("prepare: %w", err)
+	}
+	defer func() { _ = stmt.Close() }()
+
+	for _, item := range items {
+		res, err := stmt.Exec(
+			item.URL, item.Title, item.Price, item.Currency, item.Priority,
+			item.Category, item.Notes, item.Status, item.DesiredDate, item.PriceConfirmed,
+			item.ImageURL,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("insert: %w", err)
+		}
+		id, _ := res.LastInsertId()
+		item.ID = id
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("commit: %w", err)
+	}
+	return items, nil
+}
+
 func CreateItem(item *Item) (int64, error) {
 	res, err := DB.Exec(
 		`INSERT INTO items (url, title, price, currency, priority, category, notes, status, desired_date, price_confirmed, image_url)

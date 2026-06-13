@@ -6,9 +6,14 @@
 <h2 class="font-headline-lg text-headline-lg font-bold text-on-surface">Planned Items</h2>
 <p class="font-body-lg text-body-lg text-on-surface-variant">Manage and track your upcoming acquisitions.</p>
 </div>
+<div class="flex items-center gap-3">
+<button class="border border-outline-variant/30 text-on-surface px-lg py-md rounded-xl font-bold flex items-center justify-center gap-sm hover:bg-surface-container-high transition-all" @click="showWishlistModal = true">
+<span class="material-symbols-outlined">download</span> Import Wishlist
+</button>
 <a href="/items/new" class="bg-primary-container text-on-primary-container px-lg py-md rounded-xl font-bold flex items-center justify-center gap-sm hover:brightness-110 transition-all shadow-lg shadow-primary-container/20">
 <span class="material-symbols-outlined">add_circle</span> Add Item
 </a>
+</div>
 </div>
 <div class="flex items-center gap-sm mb-xl overflow-x-auto pb-2" style="scrollbar-width:none" id="filter-chips">
 <a href="/items" class="filter-chip px-lg py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all text-on-surface-variant hover:bg-surface-container-high" data-status="">All Items</a>
@@ -140,6 +145,7 @@ document.addEventListener('alpine:init', function() {
   Alpine.data('purchaseModal', function() {
     return {
       showPurchaseModal: false,
+      showWishlistModal: false,
       purchaseItemId: 0,
       purchaseItemTitle: '',
       purchasePrice: '',
@@ -166,7 +172,177 @@ document.addEventListener('alpine:init', function() {
       }
     };
   });
+  Alpine.data('wishlistImport', function() {
+    return {
+      step: 'input',
+      url: '',
+      loading: false,
+      importing: false,
+      total: 0,
+      newCount: 0,
+      skipped: 0,
+      items: [],
+      error: '',
+      scrape: function() {
+        if (!this.url) return;
+        this.loading = true;
+        this.error = '';
+        this.step = 'loading';
+        fetch('/api/import/wishlist', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({url: this.url})
+        }).then(function(r) {
+          return r.json().then(function(data) {
+            if (!r.ok) { throw new Error(data.error || 'Scrape failed'); }
+            return data;
+          });
+        }.bind(this)).then(function(data) {
+          this.total = data.total;
+          this.newCount = data.new;
+          this.skipped = data.skipped;
+          this.items = data.items.map(function(item) {
+            return {
+              url: item.url,
+              title: item.title,
+              price: item.price || '',
+              currency: item.currency || 'USD',
+              image_url: item.image_url || ''
+            };
+          });
+          this.step = this.items.length > 0 ? 'results' : 'empty';
+          this.loading = false;
+        }.bind(this)).catch(function(err) {
+          this.error = err.message;
+          this.step = 'error';
+          this.loading = false;
+        }.bind(this));
+      },
+      importAll: function() {
+        this.importing = true;
+        fetch('/api/items/bulk', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({items: this.items.map(function(item) {
+            return {
+              url: item.url,
+              title: item.title,
+              price: item.price ? parseFloat(item.price) : null,
+              currency: item.currency,
+              image_url: item.image_url
+            };
+          })})
+        }).then(function(r) {
+          return r.json().then(function(data) {
+            if (!r.ok) { throw new Error(data.error || 'Import failed'); }
+            return data;
+          });
+        }.bind(this)).then(function(data) {
+          this.step = 'done';
+          this.importing = false;
+          window.toast(data.count + ' items imported from wishlist' + (data.skipped > 0 ? ' (' + data.skipped + ' skipped)' : ''));
+          setTimeout(function() { location.reload(); }, 800);
+        }.bind(this)).catch(function(err) {
+          this.error = err.message;
+          this.step = 'error';
+          this.importing = false;
+        }.bind(this));
+      },
+      reset: function() {
+        this.step = 'input';
+        this.url = '';
+        this.items = [];
+        this.error = '';
+        this.total = 0;
+        this.newCount = 0;
+        this.skipped = 0;
+      }
+    };
+  });
 });
 </script>
+</div>
+<div x-data="wishlistImport" x-show="showWishlistModal" x-cloak class="fixed inset-0 z-[200] flex items-center justify-center p-md" style="background:rgba(0,0,0,0.6)" @click.self="showWishlistModal = false; reset()">
+<div class="glass-card rounded-2xl p-lg w-full max-w-lg max-h-[85vh] flex flex-col" @click.stop>
+<div class="flex items-center justify-between mb-lg shrink-0">
+<h3 class="font-headline-md text-headline-md text-on-surface">Import Amazon Wishlist</h3>
+<button class="text-on-surface-variant hover:text-on-surface transition-colors" @click="showWishlistModal = false; reset()"><span class="material-symbols-outlined">close</span></button>
+</div>
+<template x-if="step === 'input'">
+<div class="flex flex-col gap-md">
+<p class="font-body-md text-body-md text-on-surface-variant">Paste your Amazon wishlist URL to import all items.</p>
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-xl px-4 py-3 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_1px_#375BD2]">
+<input class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-body-md text-body-md" type="url" x-model="url" placeholder="https://www.amazon.com/hz/wishlist/ls/..."/>
+</div>
+<button class="bg-primary text-on-primary px-xl py-3 rounded-xl font-bold hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2" @click="scrape" x-bind:disabled="!url">
+<span class="material-symbols-outlined">search</span> Scrape Wishlist
+</button>
+</div>
+</template>
+<template x-if="step === 'loading'">
+<div class="flex flex-col items-center justify-center py-16 gap-md">
+<div class="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Scraping wishlist...</p>
+</div>
+</template>
+<template x-if="step === 'results'">
+<div class="flex flex-col gap-md min-h-0 flex-1">
+<div class="flex items-center gap-2 text-sm text-on-surface-variant shrink-0">
+<span class="font-semibold text-primary" x-text="newCount"></span> new items found
+<template x-if="skipped > 0">
+<span>(<span x-text="skipped"></span> already in your list)</span>
+</template>
+</div>
+<div class="flex flex-col gap-3 overflow-y-auto -mx-lg px-lg py-2 max-h-[50vh]">
+<template x-for="(item, idx) in items" :key="item.url">
+<div class="flex gap-3 items-start p-3 rounded-xl bg-surface-container-low border border-outline-variant/10 min-h-20">
+<div class="w-14 h-14 rounded-lg bg-surface-container flex-shrink-0 overflow-hidden">
+<img x-bind:src="item.image_url" alt="" class="w-full h-full object-cover" onerror="this.style.display='none'"/>
+</div>
+<div class="flex-1 min-w-0">
+<p class="font-body-sm text-body-sm text-on-surface font-semibold truncate" x-text="item.title"></p>
+<p class="font-label-sm text-label-sm text-on-surface-variant truncate" x-text="item.url"></p>
+<div class="flex items-center gap-1 mt-2">
+<span class="font-body-md text-body-md text-on-surface-variant">$</span>
+<input class="bg-surface-container border border-outline-variant/30 rounded-lg px-3 py-1.5 w-24 text-on-surface font-body-md text-body-md focus:border-primary focus:shadow-[0_0_0_1px_#375BD2] outline-none" type="number" step="0.01" x-model="item.price" placeholder="0.00"/>
+</div>
+</div>
+</div>
+</template>
+</div>
+<div class="flex justify-end gap-3 pt-md border-t border-outline-variant/10 shrink-0">
+<button class="border border-outline-variant/30 text-on-surface px-5 py-2 rounded-xl font-label-sm text-label-sm hover:bg-surface-container-high transition-colors" @click="showWishlistModal = false; reset()">Cancel</button>
+<button class="bg-primary text-on-primary px-6 py-2 rounded-xl font-label-md text-label-md hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-primary/20 flex items-center gap-2" @click="importAll" x-bind:disabled="importing">
+<template x-if="importing"><span class="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin"></span></template>
+<span x-text="importing ? 'Importing...' : 'Import All (' + newCount + ')'"></span>
+</button>
+</div>
+</div>
+</template>
+<template x-if="step === 'empty'">
+<div class="flex flex-col items-center justify-center py-16 gap-md">
+<span class="text-emerald-500 material-symbols-outlined text-4xl">check_circle</span>
+<p class="font-body-lg text-body-lg text-on-surface-variant">All items from this wishlist are already in your list.</p>
+<button class="border border-outline-variant/30 text-on-surface px-5 py-2 rounded-xl font-label-sm text-label-sm hover:bg-surface-container-high transition-colors mt-md" @click="showWishlistModal = false; reset()">Close</button>
+</div>
+</template>
+<template x-if="step === 'error'">
+<div class="flex flex-col items-center justify-center py-16 gap-md">
+<span class="text-error material-symbols-outlined text-4xl">error_outline</span>
+<p class="font-body-lg text-body-lg text-on-surface-variant text-center" x-text="error"></p>
+<div class="flex gap-3 mt-md">
+<button class="border border-outline-variant/30 text-on-surface px-5 py-2 rounded-xl font-label-sm text-label-sm hover:bg-surface-container-high transition-colors" @click="step = 'input'; error = ''">Try Again</button>
+<button class="border border-outline-variant/30 text-on-surface px-5 py-2 rounded-xl font-label-sm text-label-sm hover:bg-surface-container-high transition-colors" @click="showWishlistModal = false; reset()">Close</button>
+</div>
+</div>
+</template>
+<template x-if="step === 'done'">
+<div class="flex flex-col items-center justify-center py-16 gap-md">
+<span class="text-emerald-500 material-symbols-outlined text-4xl">check_circle</span>
+<p class="font-body-lg text-body-lg text-on-surface font-semibold">Import complete!</p>
+<button class="border border-outline-variant/30 text-on-surface px-5 py-2 rounded-xl font-label-sm text-label-sm hover:bg-surface-container-high transition-colors" @click="showWishlistModal = false; reset()">Close</button>
+</div>
+</template>
+</div>
 </div>
 {{template "footer" .}}

@@ -102,6 +102,8 @@ func New(addr string, tpl *template.Template, staticFS http.FileSystem) *Server 
 	s.Router.Delete("/api/items/{id}", s.Handler.DeleteItem)
 	s.Router.Post("/api/items/{id}/purchase", s.Handler.PurchaseItem)
 	s.Router.Post("/api/scrape", s.Handler.ScrapeURL)
+	s.Router.Post("/api/import/wishlist", s.Handler.ImportWishlist)
+	s.Router.Post("/api/items/bulk", s.Handler.BulkCreateItems)
 	s.Router.Post("/api/plan/generate", s.Handler.GeneratePlan)
 	s.Router.Get("/api/plan", s.Handler.GetPlan)
 	s.Router.Put("/api/settings", s.Handler.UpdateSettings)

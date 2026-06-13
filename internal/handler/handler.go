@@ -342,6 +342,101 @@ func (h *Handler) ScrapeURL(w http.ResponseWriter, r *http.Request) {
 	jsonResp(w, 200, result)
 }
 
+// ─── Wishlist Import ─────────────────────────────────────────────────────────
+
+func (h *Handler) ImportWishlist(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		URL string `json:"url"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.URL == "" {
+		jsonErr(w, 400, "url required")
+		return
+	}
+
+	u, err := url.Parse(req.URL)
+	if err != nil {
+		jsonErr(w, 400, "invalid url")
+		return
+	}
+	if !extractor.SupportsWishlist(u) {
+		jsonErr(w, 400, "unsupported wishlist url (only Amazon wishlists supported)")
+		return
+	}
+
+	results, err := extractor.ExtractWishlist(req.URL)
+	if err != nil {
+		jsonErr(w, 422, "extraction failed: "+err.Error())
+		return
+	}
+
+	// Filter out items already in the database (by URL)
+	var newItems []extractor.Result
+	for _, r := range results {
+		existing, _ := db.GetItemByURL(r.URL)
+		if existing == nil {
+			newItems = append(newItems, *r)
+		}
+	}
+
+	jsonResp(w, 200, map[string]interface{}{
+		"total":  len(results),
+		"new":    len(newItems),
+		"skipped": len(results) - len(newItems),
+		"items":  newItems,
+	})
+}
+
+func (h *Handler) BulkCreateItems(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Items []db.Item `json:"items"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		jsonErr(w, 400, "invalid json")
+		return
+	}
+	if len(req.Items) == 0 {
+		jsonErr(w, 400, "no items provided")
+		return
+	}
+
+	// Filter out items that already exist (by URL)
+	var toCreate []*db.Item
+	var skipped int
+	for i := range req.Items {
+		existing, _ := db.GetItemByURL(req.Items[i].URL)
+		if existing != nil {
+			skipped++
+			continue
+		}
+		item := req.Items[i]
+		if item.Status == "" {
+			item.Status = "pending"
+		}
+		toCreate = append(toCreate, &item)
+	}
+
+	if len(toCreate) == 0 {
+		jsonResp(w, 200, map[string]interface{}{
+			"count":   0,
+			"skipped": skipped,
+			"items":   []db.Item{},
+		})
+		return
+	}
+
+	created, err := db.BulkCreateItems(toCreate)
+	if err != nil {
+		jsonErr(w, 500, err.Error())
+		return
+	}
+
+	jsonResp(w, 201, map[string]interface{}{
+		"count":   len(created),
+		"skipped": skipped,
+		"items":   created,
+	})
+}
+
 // ─── Plan ───────────────────────────────────────────────────────────────────
 
 func (h *Handler) GeneratePlan(w http.ResponseWriter, r *http.Request) {

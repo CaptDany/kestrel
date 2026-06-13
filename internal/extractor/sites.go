@@ -331,6 +331,145 @@ func GetParserByName(name string) Extractor {
 	return &genericParser{}
 }
 
+// SupportsWishlist returns true if the URL points to a known wishlist page.
+func SupportsWishlist(u *url.URL) bool {
+	host := strings.ToLower(u.Hostname())
+	if !strings.Contains(host, "amazon.") {
+		return false
+	}
+	path := strings.ToLower(u.Path)
+	return strings.Contains(path, "/wishlist/") || strings.Contains(path, "/registry/")
+}
+
+// ExtractWishlist scrapes all pages of an Amazon wishlist and returns all items.
+func ExtractWishlist(rawURL string) ([]*Result, error) {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return nil, fmt.Errorf("invalid url: %w", err)
+	}
+	if !SupportsWishlist(u) {
+		return nil, fmt.Errorf("unsupported wishlist url")
+	}
+
+	var allResults []*Result
+	page := 1
+	seen := make(map[string]bool)
+
+	for {
+		pageURL := rawURL
+		if page > 1 {
+			q := u.Query()
+			q.Set("page", strconv.Itoa(page))
+			pageURL = u.Scheme + "://" + u.Host + u.Path + "?" + q.Encode()
+		}
+
+		doc, err := fetchDoc(pageURL)
+		if err != nil {
+			return allResults, fmt.Errorf("fetch page %d: %w", page, err)
+		}
+
+		var items *goquery.Selection
+		if sel := doc.Find("#g-items [data-id]"); sel.Length() > 0 {
+			items = sel
+		} else if sel := doc.Find("[data-id]"); sel.Length() > 0 {
+			items = sel
+		} else {
+			items = doc.Find(".a-list-item")
+		}
+		if items.Length() == 0 {
+			break
+		}
+
+		var pageResults []*Result
+		items.Each(func(_ int, s *goquery.Selection) {
+			r := &Result{}
+
+			link := s.Find("a[id^='itemName_'], a[class*='product-link'], h2 a").First()
+			if link.Length() == 0 {
+				link = s.Find("a").First()
+			}
+			r.Title = strings.TrimSpace(link.Text())
+			if href, ok := link.Attr("href"); ok && href != "" {
+				if strings.HasPrefix(href, "http") {
+					r.URL = href
+				} else {
+					r.URL = u.Scheme + "://" + u.Host + href
+				}
+			}
+
+			img := s.Find("img[src*='images'], img[data-a-dynamic-image]").First()
+			if src, ok := img.Attr("src"); ok && src != "" {
+				r.ImageURL = src
+			} else if dyn, ok := img.Attr("data-a-dynamic-image"); ok && dyn != "" {
+				r.ImageURL = firstImageURL(dyn)
+			}
+
+			priceRe := regexp.MustCompile(`[\d,]+\.?\d*`)
+			priceText := strings.TrimSpace(s.Find(".a-price .a-offscreen").First().Text())
+			if priceText == "" {
+				priceText = strings.TrimSpace(s.Find(".a-price-whole").First().Text())
+				frac := strings.TrimSpace(s.Find(".a-price-fraction").First().Text())
+				if frac != "" {
+					priceText += "." + frac
+				}
+			}
+			if priceText == "" {
+				priceText = strings.TrimSpace(s.Find(".a-price").First().Text())
+			}
+			if priceText == "" {
+				s.Find("span").Each(func(_ int, sp *goquery.Selection) {
+					t := strings.TrimSpace(sp.Text())
+					if strings.HasPrefix(t, "$") || strings.HasPrefix(t, "US$") {
+						priceText = t
+					}
+				})
+			}
+			if priceText != "" {
+				priceStr := strings.ReplaceAll(priceText, "$", "")
+				priceStr = strings.ReplaceAll(priceStr, ",", "")
+				if match := priceRe.FindString(priceStr); match != "" {
+					if p, err := strconv.ParseFloat(match, 64); err == nil {
+						r.Price = &p
+					}
+				}
+			}
+
+			r.Currency = detectCurrency(rawURL)
+
+			if r.Title != "" && !seen[r.URL] {
+				seen[r.URL] = true
+				pageResults = append(pageResults, r)
+			}
+		})
+
+		if len(pageResults) == 0 {
+			break
+		}
+		allResults = append(allResults, pageResults...)
+
+		next := doc.Find(".a-pagination .a-last:not(.a-disabled) a")
+		if next.Length() == 0 {
+			// Try finding any link with "Next" text
+			next = doc.Find("a:contains('Next'), a:contains('next'), a:contains('→')").First()
+			if next.Length() == 0 {
+				break
+			}
+		}
+		page++
+	}
+
+	return allResults, nil
+}
+
+// firstImageURL extracts the first URL from Amazon's data-a-dynamic-image JSON.
+func firstImageURL(jsonStr string) string {
+	re := regexp.MustCompile(`"(https?://[^"]+)"`)
+	if m := re.FindStringSubmatch(jsonStr); len(m) > 1 {
+		return m[1]
+	}
+	return ""
+}
+
 func detectCurrency(rawURL string) string {
 	u, err := url.Parse(rawURL)
 	if err != nil {
