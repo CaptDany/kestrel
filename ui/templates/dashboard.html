@@ -9,10 +9,10 @@
 <h2 class="font-headline-lg text-headline-lg text-on-surface">Overview</h2>
 <p class="font-body-lg text-body-lg text-on-surface-variant">Your automated spending roadmap.</p>
 </div>
-<div class="flex items-center gap-2 bg-surface-container-high p-1 rounded-lg">
-<button class="px-4 py-1.5 rounded-md bg-white text-black font-semibold text-xs transition-all">WEEKLY</button>
-<button class="px-4 py-1.5 rounded-md text-on-surface-variant font-semibold text-xs hover:text-white transition-all">MONTHLY</button>
-</div>
+                <div class="flex items-center gap-2 bg-surface-container-high p-1 rounded-lg">
+                    <a href="?view=weekly" class="px-4 py-1.5 rounded-md font-semibold text-xs transition-all {{if eq $data.currentView "weekly"}}bg-white text-black{{else}}text-on-surface-variant hover:text-white{{end}}">WEEKLY</a>
+                    <a href="?view=monthly" class="px-4 py-1.5 rounded-md font-semibold text-xs transition-all {{if or (eq $data.currentView "monthly") (eq $data.currentView "")}}bg-white text-black{{else}}text-on-surface-variant hover:text-white{{end}}">MONTHLY</a>
+                </div>
 </header>
 <section class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-md mb-xl">
 <div class="col-span-2 md:col-span-2 lg:col-span-2 glass-card p-lg rounded-xl flex flex-col justify-between">
@@ -108,11 +108,12 @@
 <div class="w-28 h-28 rounded-full shrink-0 ring-2 ring-white/10" style="background: {{$data.conicGradient}}"></div>
 <div class="flex flex-col gap-2 min-w-0">
 {{range $data.categoryBreakdown}}
-<div class="flex items-center gap-2">
-<div class="w-3 h-3 rounded-full shrink-0" style="background: {{.Color}}"></div>
-<span class="text-body-sm text-body-sm text-on-surface-variant truncate">{{.Category}}</span>
-<span class="text-body-sm text-body-sm text-on-surface font-semibold ml-auto">{{printf "$%.0f" .Total}}</span>
-</div>
+                <div class="flex items-center gap-2 group relative">
+                    <div class="w-3 h-3 rounded-full shrink-0" style="background: {{.Color}}"></div>
+                    <span class="text-body-sm text-body-sm text-on-surface-variant truncate">{{.Category}}</span>
+                    <span class="text-body-sm text-body-sm text-on-surface font-semibold ml-auto">{{printf "$%.0f" .Total}}</span>
+                    <div class="absolute left-0 -top-8 bg-surface-container-high text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none shadow-lg border border-white/5">{{printf "%.1f" (div (mul .Total 100.0) $data.grandTotal)}}%</div>
+                </div>
 {{end}}
 </div>
 </div>
@@ -132,10 +133,11 @@
 {{if $data.monthlyTrend}}
 <div class="flex items-end gap-2 h-36">
 {{range $data.monthlyTrend}}
-<div class="flex-1 flex flex-col items-center gap-1 h-full justify-end min-w-0">
-<div class="w-full bg-primary-container rounded-t-lg transition-all hover:brightness-125" style="height: {{printf "%.0f" .PctOfMax}}%"></div>
-<span class="text-[9px] text-on-surface-variant text-center leading-tight">{{.Label}}</span>
-</div>
+                <div class="flex-1 flex flex-col items-center gap-1 h-full justify-end min-w-0 group relative">
+                    <div class="w-full bg-primary-container rounded-t-lg transition-all hover:brightness-125" style="height: {{printf "%.0f" .PctOfMax}}%"></div>
+                    <span class="text-[9px] text-on-surface-variant text-center leading-tight">{{.Label}}</span>
+                    <div class="absolute -top-8 bg-surface-container-high text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none shadow-lg border border-white/5">Plan: ${{printf "%.0f" .Planned}} · Actual: ${{printf "%.0f" .Actual}}</div>
+                </div>
 {{end}}
 </div>
 {{else}}

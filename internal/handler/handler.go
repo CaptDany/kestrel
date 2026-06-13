@@ -165,7 +165,13 @@ func (h *Handler) Dashboard(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	monthlyTrend, _ := db.GetMonthlyTrend()
+	view := r.URL.Query().Get("view")
+	var monthlyTrend []db.MonthlyTrend
+	if view == "weekly" {
+		monthlyTrend, _ = db.GetWeeklyTrend()
+	} else {
+		monthlyTrend, _ = db.GetMonthlyTrend()
+	}
 	savingProgress, _ := db.GetSavingProgress()
 	totalActual, _ := db.GetTotalActualSpend()
 	totalPlannedFromHistory, _ := db.GetTotalPlannedSpend()
@@ -183,10 +189,12 @@ func (h *Handler) Dashboard(w http.ResponseWriter, r *http.Request) {
 			"totalPlannedFromHistory":  totalPlannedFromHistory,
 			"plan":                     plan,
 			"settings":                 settings,
+			"grandTotal":               grandTotal,
 			"categoryBreakdown":        categoryBreakdown,
 			"conicGradient":            conicGradient,
 			"monthlyTrend":             monthlyTrend,
 			"savingProgress":           savingProgress,
+			"currentView":              view,
 		},
 	})
 }

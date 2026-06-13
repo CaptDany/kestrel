@@ -138,6 +138,7 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-app
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 .glass-glow { box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.05); }
+.glass-nav { background: rgba(18, 19, 26, 0.82); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
 @media (display-mode: standalone) {
   .mobile-topnav { padding-top: constant(safe-area-inset-top, 0px); padding-top: env(safe-area-inset-top, 0px); }
   .mobile-bottomnav { padding-bottom: constant(safe-area-inset-bottom, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
@@ -206,7 +207,7 @@ Alpine.store('notif', {
 </head>
 <body class="overflow-x-hidden">
 <div class="flex min-h-screen">
-<aside class="fixed left-0 top-0 h-screen w-[240px] bg-surface-container-low flex-col gap-lg p-md hidden md:flex z-50 border-r border-outline-variant/10">
+<aside class="fixed left-0 top-0 h-screen w-[240px] glass-nav flex-col gap-lg p-md hidden md:flex z-50 border-r border-outline-variant/10">
 <div class="flex items-center gap-sm px-2">
 <img src="/static/logo/kestrel.svg" alt="" class="h-7"/>
 </div>
@@ -237,7 +238,7 @@ Alpine.store('notif', {
 </a>
 </div>
 </aside>
-<nav class="md:hidden fixed top-0 left-0 right-0 z-[60] bg-surface px-container-margin-mobile py-md border-b border-outline-variant/10 mobile-topnav">
+<nav class="md:hidden fixed top-0 left-0 right-0 z-[60] glass-nav px-container-margin-mobile py-md border-b border-outline-variant/10 mobile-topnav">
 <div class="flex items-center justify-between">
 <div class="flex items-center gap-sm">
 <img src="/static/logo/kestrel.svg" alt="" class="h-6"/>

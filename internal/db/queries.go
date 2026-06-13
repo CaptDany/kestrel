@@ -721,6 +721,88 @@ func GetMonthlyTrend() ([]MonthlyTrend, error) {
 	return result, nil
 }
 
+func GetWeeklyTrend() ([]MonthlyTrend, error) {
+	plannedRows, err := DB.Query(`
+		SELECT strftime('%Y-%W', scheduled_date) AS week,
+		       SUM(COALESCE(amount_allocated, 0)) AS planned
+		FROM purchase_plan
+		WHERE status IN ('planned', '')
+		GROUP BY strftime('%Y-%W', scheduled_date)
+		ORDER BY week ASC`,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("query planned weekly trend: %w", err)
+	}
+	defer func() { _ = plannedRows.Close() }()
+
+	trendMap := make(map[string]*MonthlyTrend)
+	var orderedWeeks []string
+
+	for plannedRows.Next() {
+		var t MonthlyTrend
+		if err := plannedRows.Scan(&t.Month, &t.Planned); err != nil {
+			return nil, fmt.Errorf("scan planned weekly trend: %w", err)
+		}
+		if len(t.Month) >= 7 {
+			t.Label = "W" + t.Month[6:] + " " + t.Month[:4]
+		} else {
+			t.Label = t.Month
+		}
+		trendMap[t.Month] = &t
+		orderedWeeks = append(orderedWeeks, t.Month)
+	}
+
+	actualRows, err := DB.Query(`
+		SELECT strftime('%Y-%W', purchased_at) AS week,
+		       SUM(COALESCE(actual_price, 0)) AS actual
+		FROM purchase_history
+		GROUP BY strftime('%Y-%W', purchased_at)
+		ORDER BY week ASC`,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("query actual weekly trend: %w", err)
+	}
+	defer func() { _ = actualRows.Close() }()
+
+	for actualRows.Next() {
+		var week string
+		var actual float64
+		if err := actualRows.Scan(&week, &actual); err != nil {
+			return nil, fmt.Errorf("scan actual weekly trend: %w", err)
+		}
+		if t, ok := trendMap[week]; ok {
+			t.Actual = actual
+		} else {
+			label := week
+			if len(week) >= 7 {
+				label = "W" + week[6:] + " " + week[:4]
+			}
+			trendMap[week] = &MonthlyTrend{Month: week, Label: label, Actual: actual}
+			orderedWeeks = append(orderedWeeks, week)
+		}
+	}
+
+	result := make([]MonthlyTrend, 0, len(orderedWeeks))
+	maxVal := 0.0
+	for _, w := range orderedWeeks {
+		if t := trendMap[w]; t != nil {
+			result = append(result, *t)
+			if t.Planned > maxVal {
+				maxVal = t.Planned
+			}
+			if t.Actual > maxVal {
+				maxVal = t.Actual
+			}
+		}
+	}
+	for i := range result {
+		if maxVal > 0 {
+			result[i].PctOfMax = (result[i].Planned / maxVal) * 100
+		}
+	}
+	return result, nil
+}
+
 func GetSavingProgress() ([]SavingProgress, error) {
 	rows, err := DB.Query(`
 		SELECT is.item_id,
