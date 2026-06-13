@@ -61,12 +61,12 @@
 <span class="text-on-surface-variant font-label-sm">{{$p.ScheduledDate}}</span>
 </div>
 </div>
-<span class="font-headline-md text-headline-md text-on-surface">{{if $p.ItemPrice}}{{printf "$%.2f" $p.ItemPrice}}{{else}}—{{end}}</span>
+<span class="font-headline-md text-headline-md text-on-surface">{{if $p.ItemPrice}}{{printf "$%.2f" (deref $p.ItemPrice)}}{{else}}—{{end}}</span>
 </div>
 <div class="flex items-center justify-between pt-md border-t border-outline-variant/10">
 <div class="flex flex-col">
 <span class="text-[10px] text-on-surface-variant font-medium uppercase">Allocated</span>
-<span class="font-label-md text-primary">{{if $p.AmountAllocated}}{{printf "$%.2f" $p.AmountAllocated}}{{else}}$0.00{{end}}</span>
+<span class="font-label-md text-primary">{{if $p.AmountAllocated}}{{printf "$%.2f" (deref $p.AmountAllocated)}}{{else}}$0.00{{end}}</span>
 </div>
 {{$alloc := $p.AmountAllocated}}
 {{$price := $p.ItemPrice}}
@@ -76,12 +76,12 @@
 <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
 <span class="text-emerald-500 font-label-sm">Purchased</span>
 </div>
-{{else if and $alloc $price (eq $alloc $price)}}
+{{else if and $alloc $price (eq (deref $alloc) (deref $price))}}
 <div class="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 rounded-full">
 <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
 <span class="text-emerald-500 font-label-sm">Fully Funded</span>
 </div>
-{{else if and $alloc $price (gt $alloc 0.0)}}
+{{else if and $alloc $price (gt (deref $alloc) 0.0)}}
 <div class="flex items-center gap-2 px-3 py-1 bg-orange-500/10 rounded-full">
 <div class="w-2 h-2 rounded-full bg-orange-500"></div>
 <span class="text-orange-500 font-label-sm">Partial</span>
