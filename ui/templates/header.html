@@ -1,7 +1,8 @@
 {{define "header"}}
 <!doctype html>
-<html class="dark" lang="en">
+<html lang="en">
     <head>
+        <script>if (window.matchMedia('(prefers-color-scheme:dark)').matches) document.documentElement.classList.add('dark')</script>
         <meta charset="utf-8" />
         <meta
             content="width=device-width, initial-scale=1.0, viewport-fit=cover"
@@ -28,7 +29,8 @@
         />
         <meta name="apple-mobile-web-app-title" content="Kestrel" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="theme-color" content="#12131a" />
+        <meta name="theme-color" content="#FFFBF8" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#12131A" media="(prefers-color-scheme: dark)" />
         <meta name="tailwindcss-cdn" content="production" />
         <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
         <link
@@ -50,53 +52,40 @@
                 theme: {
                     extend: {
                         colors: {
-                            "on-primary": "#002681",
-                            "on-secondary-container": "#b9b8bc",
-                            "on-primary-container": "#dde1ff",
-                            "inverse-surface": "#e2e1ec",
-                            "on-tertiary": "#552100",
-                            surface: "#12131a",
-                            "inverse-on-surface": "#2f3038",
-                            "surface-container-low": "#1a1b22",
-                            background: "#12131a",
-                            "primary-fixed": "#dce1ff",
-                            "on-tertiary-container": "#ffdccc",
-                            "secondary-fixed": "#e3e2e6",
-                            "tertiary-fixed-dim": "#ffb690",
-                            "inverse-primary": "#2f54cb",
-                            "on-primary-fixed": "#001551",
-                            "on-surface-variant": "#c4c5d6",
-                            "surface-variant": "#33343c",
-                            "surface-container-highest": "#33343c",
-                            "surface-bright": "#383941",
-                            secondary: "#c7c6ca",
-                            "surface-container": "#1e1f27",
-                            "surface-dim": "#12131a",
-                            "on-error-container": "#ffdad6",
-                            "on-background": "#e2e1ec",
-                            "surface-container-high": "#282a31",
-                            "tertiary-fixed": "#ffdbcb",
-                            "on-surface": "#e2e1ec",
-                            "error-container": "#93000a",
-                            tertiary: "#ffb690",
-                            "surface-tint": "#b7c4ff",
-                            error: "#ffb4ab",
-                            "secondary-fixed-dim": "#c7c6ca",
-                            "on-secondary-fixed-variant": "#46474a",
-                            "outline-variant": "#444654",
-                            "on-tertiary-fixed": "#341100",
-                            primary: "#b7c4ff",
-                            "on-primary-fixed-variant": "#0439b3",
-                            outline: "#8e909f",
-                            "on-error": "#690005",
-                            "on-secondary": "#2f3033",
-                            "secondary-container": "#48494c",
-                            "on-tertiary-fixed-variant": "#783100",
-                            "surface-container-lowest": "#0c0e15",
-                            "tertiary-container": "#a84800",
-                            "on-secondary-fixed": "#1a1b1e",
-                            "primary-container": "#375bd2",
-                            "primary-fixed-dim": "#b7c4ff",
+                            primary: "rgb(var(--primary) / <alpha-value>)",
+                            "on-primary": "rgb(var(--on-primary) / <alpha-value>)",
+                            "primary-container": "rgb(var(--primary-container) / <alpha-value>)",
+                            "on-primary-container": "rgb(var(--on-primary-container) / <alpha-value>)",
+                            secondary: "rgb(var(--secondary) / <alpha-value>)",
+                            "on-secondary": "rgb(var(--on-secondary) / <alpha-value>)",
+                            "secondary-container": "rgb(var(--secondary-container) / <alpha-value>)",
+                            "on-secondary-container": "rgb(var(--on-secondary-container) / <alpha-value>)",
+                            tertiary: "rgb(var(--tertiary) / <alpha-value>)",
+                            "on-tertiary": "rgb(var(--on-tertiary) / <alpha-value>)",
+                            "tertiary-container": "rgb(var(--tertiary-container) / <alpha-value>)",
+                            "on-tertiary-container": "rgb(var(--on-tertiary-container) / <alpha-value>)",
+                            error: "rgb(var(--error) / <alpha-value>)",
+                            "on-error": "rgb(var(--on-error) / <alpha-value>)",
+                            "error-container": "rgb(var(--error-container) / <alpha-value>)",
+                            "on-error-container": "rgb(var(--on-error-container) / <alpha-value>)",
+                            background: "rgb(var(--background) / <alpha-value>)",
+                            "on-background": "rgb(var(--on-background) / <alpha-value>)",
+                            surface: "rgb(var(--surface) / <alpha-value>)",
+                            "on-surface": "rgb(var(--on-surface) / <alpha-value>)",
+                            "surface-variant": "rgb(var(--surface-variant) / <alpha-value>)",
+                            "on-surface-variant": "rgb(var(--on-surface-variant) / <alpha-value>)",
+                            "surface-dim": "rgb(var(--surface-dim) / <alpha-value>)",
+                            "surface-bright": "rgb(var(--surface-bright) / <alpha-value>)",
+                            "surface-container-lowest": "rgb(var(--surface-container-lowest) / <alpha-value>)",
+                            "surface-container-low": "rgb(var(--surface-container-low) / <alpha-value>)",
+                            "surface-container": "rgb(var(--surface-container) / <alpha-value>)",
+                            "surface-container-high": "rgb(var(--surface-container-high) / <alpha-value>)",
+                            "surface-container-highest": "rgb(var(--surface-container-highest) / <alpha-value>)",
+                            outline: "rgb(var(--outline) / <alpha-value>)",
+                            "outline-variant": "rgb(var(--outline-variant) / <alpha-value>)",
+                            "inverse-surface": "rgb(var(--inverse-surface) / <alpha-value>)",
+                            "inverse-on-surface": "rgb(var(--inverse-on-surface) / <alpha-value>)",
+                            "inverse-primary": "rgb(var(--inverse-primary) / <alpha-value>)",
                         },
                         borderRadius: {
                             DEFAULT: "0.25rem",
@@ -177,20 +166,112 @@
             };
         </script>
         <style>
+            :root {
+                --primary: 212 45 111;
+                --on-primary: 255 255 255;
+                --primary-container: 255 212 224;
+                --on-primary-container: 58 0 26;
+                --secondary: 98 91 112;
+                --on-secondary: 255 255 255;
+                --secondary-container: 230 224 236;
+                --on-secondary-container: 30 25 43;
+                --tertiary: 159 90 0;
+                --on-tertiary: 255 255 255;
+                --tertiary-container: 255 222 142;
+                --on-tertiary-container: 50 26 0;
+                --error: 179 38 30;
+                --on-error: 255 255 255;
+                --error-container: 255 218 214;
+                --on-error-container: 65 14 11;
+                --background: 255 251 248;
+                --on-background: 28 27 31;
+                --surface: 255 251 248;
+                --on-surface: 28 27 31;
+                --surface-variant: 231 225 236;
+                --on-surface-variant: 73 69 78;
+                --surface-dim: 219 213 209;
+                --surface-bright: 255 251 248;
+                --surface-container-lowest: 255 255 255;
+                --surface-container-low: 247 242 236;
+                --surface-container: 241 236 230;
+                --surface-container-high: 235 230 225;
+                --surface-container-highest: 229 225 219;
+                --outline: 121 117 126;
+                --outline-variant: 202 196 206;
+                --inverse-surface: 48 47 52;
+                --inverse-on-surface: 244 239 234;
+                --inverse-primary: 107 124 158;
+                --glass-bg: rgba(255,255,255,0.7);
+                --glass-hover-bg: rgba(255,255,255,0.85);
+                --glass-border: rgba(0,0,0,0.06);
+                --glass-hover-border: rgba(0,0,0,0.1);
+                --tonal-bg: rgba(0,0,0,0.04);
+                --tonal-2-bg: rgba(0,0,0,0.08);
+                --shimmer-from: rgba(0,0,0,0.04);
+                --shimmer-to: rgba(0,0,0,0.08);
+                --scrollbar-thumb: rgba(0,0,0,0.2);
+                --body-color: 28 27 31;
+            }
+            .dark {
+                --primary: 187 199 220;
+                --on-primary: 26 40 56;
+                --primary-container: 109 144 185;
+                --on-primary-container: 232 238 245;
+                --secondary: 199 198 202;
+                --on-secondary: 47 48 51;
+                --secondary-container: 72 73 76;
+                --on-secondary-container: 185 184 188;
+                --tertiary: 255 182 144;
+                --on-tertiary: 85 33 0;
+                --tertiary-container: 168 72 0;
+                --on-tertiary-container: 255 220 204;
+                --error: 255 180 171;
+                --on-error: 105 0 5;
+                --error-container: 147 0 10;
+                --on-error-container: 255 218 214;
+                --background: 18 19 26;
+                --on-background: 226 225 236;
+                --surface: 18 19 26;
+                --on-surface: 226 225 236;
+                --surface-variant: 51 52 60;
+                --on-surface-variant: 196 197 214;
+                --surface-dim: 18 19 26;
+                --surface-bright: 56 57 65;
+                --surface-container-lowest: 12 14 21;
+                --surface-container-low: 26 27 34;
+                --surface-container: 30 31 39;
+                --surface-container-high: 40 42 49;
+                --surface-container-highest: 51 52 60;
+                --outline: 142 144 159;
+                --outline-variant: 68 70 84;
+                --inverse-surface: 226 225 236;
+                --inverse-on-surface: 47 48 56;
+                --inverse-primary: 55 91 210;
+                --glass-bg: rgba(26,27,30,0.8);
+                --glass-hover-bg: rgba(44,45,49,0.9);
+                --glass-border: rgba(255,255,255,0.04);
+                --glass-hover-border: rgba(255,255,255,0.08);
+                --tonal-bg: #1A1B1E;
+                --tonal-2-bg: #2C2D31;
+                --shimmer-from: #1A1B1E;
+                --shimmer-to: #2C2D31;
+                --scrollbar-thumb: #2C2D31;
+                --body-color: 226 225 236;
+            }
             {{$bgMode := index .Settings "background_mode"}}
             {{$bgValue := index .Settings "background_value"}}
             {{$bgOverlay := index .Settings "background_overlay"}}
             {{if eq $bgMode "image"}}
             html { background: #0A0B0D; }
-            body { background: transparent; color: #e2e1ec; font-family: 'Futura', 'Inter', sans-serif; }
+            body { background: transparent; color: rgb(var(--body-color)); font-family: 'Futura', 'Inter', sans-serif; }
             #bg-image { position: fixed; inset: 0; z-index: -2; background: url('{{$bgValue}}') center/cover; pointer-events: none; }
             #bg-image::after { content: ''; position: fixed; inset: 0; background: rgba(0,0,0,{{$bgOverlay}}); pointer-events: none; }
             {{else if eq $bgMode "gradient"}}
             html { background: {{$bgValue | safeCSS}}; }
-            body { background: {{$bgValue | safeCSS}}; color: #e2e1ec; font-family: 'Futura', 'Inter', sans-serif; }
+            body { background: {{$bgValue | safeCSS}}; color: rgb(var(--body-color)); font-family: 'Futura', 'Inter', sans-serif; }
             {{else}}
             html { background: {{$bgValue | safeCSS}}; }
-            body { background-color: {{$bgValue | safeCSS}}; color: #e2e1ec; font-family: 'Futura', 'Inter', sans-serif; }
+            body { background-color: {{$bgValue | safeCSS}}; color: rgb(var(--body-color)); font-family: 'Futura', 'Inter', sans-serif; }
             {{end}}
             @font-face { font-family: 'Gaya'; src: url('/static/fonts/Gaya-Demo-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
             @font-face { font-family: 'Gaya'; src: url('/static/fonts/Gaya-Demo-Italic.ttf') format('truetype'); font-weight: 400; font-style: italic; font-display: swap; }
@@ -206,11 +287,11 @@
             @font-face { font-family: 'Futura'; src: url('/static/fonts/Futura100-BoldOblique.otf') format('opentype'); font-weight: 700; font-style: italic; font-display: swap; }
             .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
             .fill-icon { font-variation-settings: 'FILL' 1; }
-            .glass-card { background: rgba(26, 27, 30, 0.8); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.04); transition: all 0.2s ease-in-out; }
-            .glass-card:hover { background: rgba(44, 45, 49, 0.9); border-color: rgba(255, 255, 255, 0.08); }
-            .tonal-layer-1 { background-color: #1A1B1E; border: 1px solid rgba(255, 255, 255, 0.04); }
-            .tonal-layer-2 { background-color: #2C2D31; }
-            .shimmer { background: linear-gradient(90deg, #1A1B1E 25%, #2C2D31 50%, #1A1B1E 75%); background-size: 200% 100%; animation: shimmer 2s infinite linear; }
+            .glass-card { background: var(--glass-bg); backdrop-filter: blur(8px); border: 1px solid var(--glass-border); transition: all 0.2s ease-in-out; }
+            .glass-card:hover { background: var(--glass-hover-bg); border-color: var(--glass-hover-border); }
+            .tonal-layer-1 { background-color: var(--tonal-bg); border: 1px solid var(--glass-border); }
+            .tonal-layer-2 { background-color: var(--tonal-2-bg); }
+            .shimmer { background: linear-gradient(90deg, var(--shimmer-from) 25%, var(--shimmer-to) 50%, var(--shimmer-from) 75%); background-size: 200% 100%; animation: shimmer 2s infinite linear; }
             @keyframes shimmer { to { background-position: -200% 0; } }
             ::-webkit-scrollbar { width: 6px; }
             {{if eq $bgMode "image"}}
@@ -218,7 +299,7 @@
             {{else}}
             ::-webkit-scrollbar-track { background: {{$bgValue | safeCSS}}; }
             {{end}}
-            ::-webkit-scrollbar-thumb { background: #2C2D31; border-radius: 10px; }
+            ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 10px; }
             .htmx-indicator { opacity: 0; transition: opacity 200ms ease-in; }
             .htmx-request .htmx-indicator { opacity: 1; }
             .htmx-request.htmx-indicator { opacity: 1; }
@@ -231,9 +312,9 @@
             .no-scrollbar::-webkit-scrollbar { display: none; }
             .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
             .glass-glow { box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.05); }
-            .glass-nav { background: rgba(18, 19, 26, 0.4); will-change: transform; }
+            .glass-nav { background: color-mix(in srgb, rgb(var(--surface)) 40%, transparent); will-change: transform; }
             @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-              .glass-nav { background: rgba(18, 19, 26, 0.3); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); will-change: transform; }
+              .glass-nav { background: color-mix(in srgb, rgb(var(--surface)) 30%, transparent); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); will-change: transform; }
             }
             [x-cloak] { display: none !important; }
             @media (display-mode: standalone) {
