@@ -96,6 +96,7 @@ func main() {
 	}
 
 	notifEngine := notifier.New([]notifier.Notifier{
+		notifier.NewInAppNotifier(),
 		notifier.NewEmailNotifier(),
 		notifier.NewPushNotifier(),
 	})

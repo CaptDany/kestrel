@@ -37,15 +37,17 @@ func (h *Handler) SetTracker(t *tracker.Tracker) {
 }
 
 type pageData struct {
-	Title    string
-	Data     interface{}
-	Error    string
-	Settings map[string]string
+	Title       string
+	Data        interface{}
+	Error       string
+	Settings    map[string]string
+	UnreadCount int
 }
 
 func (h *Handler) render(w http.ResponseWriter, name string, data pageData) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	data.Settings, _ = db.GetAllSettings()
+	data.UnreadCount, _ = db.GetUnreadNotificationCount()
 	if err := h.tpl.ExecuteTemplate(w, name, data); err != nil {
 		log.Printf("render error: %v", err)
 		http.Error(w, "Internal error", 500)
@@ -568,6 +570,38 @@ func (h *Handler) SendTestNotification(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	jsonResp(w, 200, map[string]string{"status": "test sent"})
+}
+
+// ─── In-App Notifications ────────────────────────────────────────────────────
+
+func (h *Handler) GetNotifications(w http.ResponseWriter, r *http.Request) {
+	unread, _ := db.GetUnreadNotificationCount()
+	items, _ := db.GetNotifications(50, 0)
+	jsonResp(w, 200, map[string]interface{}{
+		"unread": unread,
+		"items":  items,
+	})
+}
+
+func (h *Handler) MarkNotificationRead(w http.ResponseWriter, r *http.Request) {
+	id, err := parseID(r)
+	if err != nil {
+		jsonErr(w, 400, "invalid id")
+		return
+	}
+	if err := db.MarkNotificationRead(id); err != nil {
+		jsonErr(w, 500, err.Error())
+		return
+	}
+	jsonResp(w, 200, map[string]string{"status": "read"})
+}
+
+func (h *Handler) MarkAllNotificationsRead(w http.ResponseWriter, r *http.Request) {
+	if err := db.MarkAllNotificationsRead(); err != nil {
+		jsonErr(w, 500, err.Error())
+		return
+	}
+	jsonResp(w, 200, map[string]string{"status": "all read"})
 }
 
 // ─── Paydays ────────────────────────────────────────────────────────────────

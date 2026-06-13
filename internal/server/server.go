@@ -114,6 +114,9 @@ func New(addr string, tpl *template.Template, staticFS http.FileSystem) *Server 
 	s.Router.Post("/api/budget-entries", s.Handler.CreateBudgetEntry)
 	s.Router.Delete("/api/budget-entries/{id}", s.Handler.DeleteBudgetEntry)
 	s.Router.Post("/api/notify/test", s.Handler.SendTestNotification)
+	s.Router.Get("/api/notifications", s.Handler.GetNotifications)
+	s.Router.Put("/api/notifications/read-all", s.Handler.MarkAllNotificationsRead)
+	s.Router.Put("/api/notifications/{id}/read", s.Handler.MarkNotificationRead)
 
 	return s
 }

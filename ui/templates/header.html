@@ -172,6 +172,36 @@ document.addEventListener('alpine:init', function() {
 });
 function toast(msg, type) { Alpine.store('toast').fire(msg, type); }
 function confirmAction(msg, callback) { Alpine.store('confirm').fire(msg, callback); }
+Alpine.store('notif', {
+  unread: 0,
+  items: [],
+  open: false,
+  init() { this.unread = {{.UnreadCount}}; },
+  async fetch() {
+    try {
+      var res = await fetch('/api/notifications');
+      var data = await res.json();
+      this.unread = data.unread;
+      this.items = data.items;
+    } catch(e) {}
+  },
+  toggle() {
+    this.open = !this.open;
+    if (this.open) this.fetch();
+  },
+  close() { this.open = false; },
+  async markRead(id) {
+    try { await fetch('/api/notifications/' + id + '/read', { method: 'PUT' }); } catch(e) {}
+    this.unread = Math.max(0, this.unread - 1);
+    var item = this.items.find(function(i) { return i.id === id; });
+    if (item) item.is_read = 1;
+  },
+  async markAllRead() {
+    try { await fetch('/api/notifications/read-all', { method: 'PUT' }); } catch(e) {}
+    this.unread = 0;
+    this.items.forEach(function(i) { i.is_read = 1; });
+  }
+});
 </script>
 </head>
 <body class="overflow-x-hidden">
@@ -193,6 +223,10 @@ function confirmAction(msg, callback) { Alpine.store('confirm').fire(msg, callba
 <a class="nav-link flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all rounded-lg" href="/history">
 <span class="material-symbols-outlined">receipt_long</span><span class="font-label-md text-label-md">History</span>
 </a>
+<button class="nav-link flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all rounded-lg w-full text-left relative" @click="$store.notif.toggle()">
+<span class="material-symbols-outlined">notifications</span><span class="font-label-md text-label-md">Notifications</span>
+<span x-show="$store.notif.unread > 0" x-text="$store.notif.unread" class="ml-auto bg-primary text-on-primary text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1" style="display:none"></span>
+</button>
 <a class="nav-link flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all rounded-lg" href="/settings">
 <span class="material-symbols-outlined">settings</span><span class="font-label-md text-label-md">Settings</span>
 </a>
@@ -209,9 +243,11 @@ function confirmAction(msg, callback) { Alpine.store('confirm').fire(msg, callba
 <img src="/static/logo/kestrel.svg" alt="" class="h-6"/>
 </div>
 <div class="flex items-center gap-md">
-<button class="text-on-surface-variant hover:text-primary transition-colors active:scale-95 relative">
+<button class="text-on-surface-variant hover:text-primary transition-colors active:scale-95 relative" @click="$store.notif.toggle()">
 <span class="material-symbols-outlined">notifications</span>
-<span class="absolute top-0 right-0 w-2 h-2 bg-primary rounded-full border-2 border-surface"></span>
+<template x-if="$store.notif.unread > 0">
+<span class="absolute -top-1 -right-1 bg-primary text-on-primary text-[9px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-1 border-2 border-surface" x-text="$store.notif.unread"></span>
+</template>
 </button>
 <a href="/settings" class="text-on-surface-variant hover:text-primary transition-colors active:scale-95">
 <span class="material-symbols-outlined">settings</span>
@@ -245,4 +281,45 @@ function confirmAction(msg, callback) { Alpine.store('confirm').fire(msg, callba
   </div>
 </div>
 {{if .Error}}<div class="bg-error-container text-on-error-container px-lg py-md rounded-xl mb-lg flex items-center gap-3"><span class="material-symbols-outlined">error</span><span>{{.Error}}</span></div>{{end}}
+<div x-show="$store.notif.open" x-cloak class="fixed inset-0 z-[150]" @click="$store.notif.close()">
+<div class="fixed top-16 right-4 w-80 max-w-[calc(100vw-2rem)] glass-card rounded-xl shadow-2xl border border-outline-variant/10 overflow-hidden" @click.stop>
+<div class="flex items-center justify-between px-lg py-md border-b border-outline-variant/10 bg-surface-container-low">
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Notifications</h3>
+<div class="flex items-center gap-2">
+<button class="font-label-sm text-label-sm text-primary hover:text-on-primary-container transition-colors" @click="$store.notif.markAllRead()" x-show="$store.notif.unread > 0">Mark all read</button>
+<button class="text-on-surface-variant hover:text-on-surface transition-colors" @click="$store.notif.close()"><span class="material-symbols-outlined text-[20px]">close</span></button>
+</div>
+</div>
+<div class="max-h-96 overflow-y-auto" x-show="$store.notif.items.length > 0">
+<template x-for="item in $store.notif.items" :key="item.id">
+<div class="flex items-start gap-3 px-lg py-md border-b border-outline-variant/5 hover:bg-surface-container-low transition-colors cursor-pointer" :class="item.is_read ? '' : 'bg-surface-container-low/50'" @click="$store.notif.markRead(item.id)">
+<div class="mt-1">
+<template x-if="item.type === 'price_drop'">
+<span class="material-symbols-outlined text-lg text-emerald-500">trending_down</span>
+</template>
+<template x-if="item.type === 'purchase_ready'">
+<span class="material-symbols-outlined text-lg text-primary">check_circle</span>
+</template>
+<template x-if="item.type !== 'price_drop' &amp;&amp; item.type !== 'purchase_ready'">
+<span class="material-symbols-outlined text-lg text-on-surface-variant">notifications</span>
+</template>
+</div>
+<div class="flex-1 min-w-0">
+<p class="font-body-sm text-body-sm text-on-surface font-medium truncate" x-text="item.subject"></p>
+<p class="font-label-sm text-label-sm text-on-surface-variant line-clamp-2 mt-1" x-text="item.body"></p>
+<p class="font-label-sm text-label-sm text-on-surface-variant/60 mt-1" x-text="item.sent_at"></p>
+</div>
+<template x-if="!item.is_read">
+<div class="w-2 h-2 rounded-full bg-primary shrink-0 mt-2"></div>
+</template>
+</div>
+</template>
+</div>
+<div class="flex flex-col items-center justify-center py-12 px-lg text-center" x-show="$store.notif.items.length === 0">
+<span class="material-symbols-outlined text-3xl text-on-surface-variant/40 mb-md">notifications_off</span>
+<p class="font-body-md text-body-md text-on-surface-variant">No notifications yet</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant/60 mt-1">Price drops and reminders will appear here.</p>
+</div>
+</div>
+</div>
 {{end}}

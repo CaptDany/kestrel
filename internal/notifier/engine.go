@@ -51,11 +51,6 @@ func (e *Engine) RefreshConfig() {
 func (e *Engine) Start(ctx context.Context) {
 	e.RefreshConfig()
 
-	if e.cfg.Get("notify_enabled", "false") != "true" {
-		log.Println("notification engine: disabled, not starting")
-		return
-	}
-
 	log.Println("notification engine: started")
 
 	ticker := time.NewTicker(e.interval)
@@ -77,11 +72,8 @@ func (e *Engine) Start(ctx context.Context) {
 func (e *Engine) check() {
 	e.mu.RLock()
 	enabled := e.cfg.Get("notify_enabled", "false") == "true"
+	quiet := e.isQuietHours()
 	e.mu.RUnlock()
-
-	if !enabled {
-		return
-	}
 
 	items, err := db.GetPlanItemsReady()
 	if err != nil {
@@ -89,14 +81,7 @@ func (e *Engine) check() {
 		return
 	}
 
-	quiet := e.isQuietHours()
-
 	for _, item := range items {
-		if quiet {
-			log.Printf("notification engine: quiet hours, skipping %d", item.ItemID)
-			continue
-		}
-
 		e.mu.RLock()
 		alreadyNotified, err := db.GetNotificationsForItem(item.ItemID, "purchase_ready", item.ScheduledDate)
 		e.mu.RUnlock()
@@ -125,7 +110,11 @@ func (e *Engine) check() {
 		msg.Body = e.buildMessageBody(msg)
 
 		for _, n := range e.notifiers {
-			if !n.IsEnabled() {
+			isInapp := n.Name() == "inapp"
+			if !isInapp && (!enabled || quiet) {
+				continue
+			}
+			if !n.IsEnabled() && !isInapp {
 				continue
 			}
 			if err := n.Send(msg); err != nil {
@@ -189,21 +178,14 @@ func (e *Engine) buildMessageBody(msg Message) string {
 	return body
 }
 
-// Notify dispatches a message to all enabled notifiers with dedup and quiet hours.
+// Notify dispatches a message to all notifiers with dedup and quiet hours.
+// The in-app notifier always runs regardless of notify_enabled.
 // Returns true if at least one notifier delivered the message.
 func (e *Engine) Notify(msg Message) bool {
 	e.mu.RLock()
 	enabled := e.cfg.Get("notify_enabled", "false") == "true"
+	quiet := e.isQuietHours()
 	e.mu.RUnlock()
-
-	if !enabled {
-		return false
-	}
-
-	if e.isQuietHours() {
-		log.Printf("notification engine: quiet hours, skipping %s for item %d", msg.Type, msg.ItemID)
-		return false
-	}
 
 	dedupKey := e.dedupKey(msg)
 	if dedupKey != "" {
@@ -218,7 +200,11 @@ func (e *Engine) Notify(msg Message) bool {
 
 	delivered := false
 	for _, n := range e.notifiers {
-		if !n.IsEnabled() {
+		isInapp := n.Name() == "inapp"
+		if !isInapp && (!enabled || quiet) {
+			continue
+		}
+		if !n.IsEnabled() && !isInapp {
 			continue
 		}
 		if err := n.Send(msg); err != nil {

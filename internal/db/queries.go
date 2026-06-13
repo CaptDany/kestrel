@@ -532,6 +532,53 @@ func GetPriceDropCountToday() (int, error) {
 	return count, nil
 }
 
+// ─── In-App Notifications ──────────────────────────────────────────────────────
+
+func GetUnreadNotificationCount() (int, error) {
+	var count int
+	err := DB.QueryRow(
+		"SELECT COUNT(*) FROM notification_log WHERE is_read = 0 AND channel = 'inapp'",
+	).Scan(&count)
+	return count, err
+}
+
+func GetNotifications(limit, offset int) ([]NotificationLog, error) {
+	rows, err := DB.Query(
+		`SELECT n.id, n.item_id, n.type, n.channel, n.subject, n.body, n.sent_at, n.delivered, n.is_read,
+		        COALESCE(i.title, '') AS item_title, COALESCE(i.url, '') AS item_url
+		 FROM notification_log n
+		 LEFT JOIN items i ON i.id = n.item_id
+		 WHERE n.channel = 'inapp'
+		 ORDER BY n.sent_at DESC
+		 LIMIT ? OFFSET ?`,
+		limit, offset,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("query notifications: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var entries []NotificationLog
+	for rows.Next() {
+		var e NotificationLog
+		if err := rows.Scan(&e.ID, &e.ItemID, &e.Type, &e.Channel, &e.Subject, &e.Body, &e.SentAt, &e.Delivered, &e.IsRead, &e.ItemTitle, &e.ItemURL); err != nil {
+			return nil, fmt.Errorf("scan notification: %w", err)
+		}
+		entries = append(entries, e)
+	}
+	return entries, nil
+}
+
+func MarkNotificationRead(id int64) error {
+	_, err := DB.Exec("UPDATE notification_log SET is_read = 1 WHERE id = ?", id)
+	return err
+}
+
+func MarkAllNotificationsRead() error {
+	_, err := DB.Exec("UPDATE notification_log SET is_read = 1 WHERE channel = 'inapp' AND is_read = 0")
+	return err
+}
+
 // GetPlanItemsReady returns plan entries where scheduled_date <= today and status = 'planned'.
 // Used by the notification engine to find items ready to be purchased.
 func GetPlanItemsReady() ([]PurchasePlan, error) {

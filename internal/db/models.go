@@ -63,6 +63,9 @@ type NotificationLog struct {
 	Body      string `json:"body"`
 	SentAt    string `json:"sent_at"`
 	Delivered int    `json:"delivered"`
+	IsRead    int    `json:"is_read"`
+	ItemTitle string `json:"item_title,omitempty"`
+	ItemURL   string `json:"item_url,omitempty"`
 }
 
 type PriceHistory struct {

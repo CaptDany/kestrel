@@ -134,6 +134,7 @@ func migrate() error {
 
 	migrations := []string{
 		`ALTER TABLE items ADD COLUMN image_url TEXT NOT NULL DEFAULT ''`,
+		`ALTER TABLE notification_log ADD COLUMN is_read INTEGER NOT NULL DEFAULT 0`,
 	}
 	for _, m := range migrations {
 		if _, err := DB.Exec(m); err != nil && !strings.Contains(err.Error(), "duplicate column") {
