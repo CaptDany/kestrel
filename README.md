@@ -1,4 +1,7 @@
-# kestrel
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="ui/static/logo/kestrel.svg">
+  <img alt="Kestrel" src="ui/static/logo/kestrel.svg" height="32">
+</picture>
 
 A self-hosted purchase planner that calendarizes e-commerce purchases based on your paydays and budget.
 
