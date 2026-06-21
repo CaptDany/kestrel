@@ -1,14 +1,12 @@
-groups:
-  - name: kestrel Configuration
-    description: Configure kestrel Purchase Planner
+﻿groups:
+  - name: Kestrel Configuration
+    description: Configure kestrel
   - name: User and Group Configuration
     description: Configure User and Group for kestrel
   - name: Network Configuration
     description: Configure Network for kestrel
   - name: Storage Configuration
     description: Configure Storage for kestrel
-  - name: Extractor Configuration
-    description: Configure URL price extraction method
   - name: Labels Configuration
     description: Configure Labels for kestrel
   - name: Resources Configuration
@@ -16,7 +14,7 @@ groups:
 
 questions:
   - variable: TZ
-    group: kestrel Configuration
+    group: Kestrel Configuration
     label: Timezone
     schema:
       type: string
@@ -27,77 +25,12 @@ questions:
 
   - variable: kestrel
     label: ""
-    group: kestrel Configuration
+    group: Kestrel Configuration
     schema:
       type: dict
       attrs:
-        - variable: budget_mode
-          label: Budget Mode
-          description: |
-            How the budget is calculated per cycle.<br>
-            - Per Payday: fixed amount each cycle<br>
-            - Flexible: base per cycle + one-off bonus entries<br>
-            - Total Pool: plan everything within a total budget
-          schema:
-            type: string
-            default: per_payday
-            required: true
-            enum:
-              - value: per_payday
-                description: Per Payday (fixed amount each cycle)
-              - value: flexible
-                description: Flexible (base + bonuses)
-              - value: total
-                description: Total Pool (plan within a total budget)
-        - variable: budget_amount
-          label: Budget Amount
-          description: The amount of budget per payday (or total for total pool mode).
-          schema:
-            type: int
-            default: 0
-            required: true
-        - variable: purchase_mode
-          label: Purchase Mode
-          description: |
-            - As Many As Possible: fill the budget with as many items as possible<br>
-            - One At A Time: schedule one item per cycle
-          schema:
-            type: string
-            default: as_many_as_possible
-            required: true
-            enum:
-              - value: as_many_as_possible
-                description: As Many As Possible
-              - value: one
-                description: One At A Time
-        - variable: sort_criteria
-          label: Sort Criteria
-          description: How items should be sorted when scheduling purchases.
-          schema:
-            type: string
-            default: price_asc
-            required: true
-            enum:
-              - value: price_asc
-                description: Cheapest First
-              - value: price_desc
-                description: Most Expensive First
-              - value: priority
-                description: Priority (high first)
-              - value: date_added
-                description: Date Added (oldest first)
-              - value: desired_date
-                description: Desired Date (earliest first)
-        - variable: currency
-          label: Currency
-          description: Default currency code (USD, EUR, GBP, etc.)
-          schema:
-            type: string
-            default: USD
-            required: true
         - variable: additional_envs
           label: Additional Environment Variables
-          description: Configure additional environment variables for kestrel.
           schema:
             type: list
             default: []
@@ -116,38 +49,6 @@ questions:
                       label: Value
                       schema:
                         type: string
-
-  - variable: extractor
-    label: ""
-    group: Extractor Configuration
-    schema:
-      type: dict
-      attrs:
-        - variable: mode
-          label: Extractor Mode
-          description: |
-            - HTTP: lightweight, no JavaScript support<br>
-            - Playwright: full browser, handles JS-heavy sites (enables scraper container)<br>
-            - External: connect to an external scraping service by URL
-          schema:
-            type: string
-            default: http
-            required: true
-            enum:
-              - value: http
-                description: HTTP Scraper (lightweight)
-              - value: playwright
-                description: Playwright (full browser)
-              - value: external
-                description: External Scraper API
-        - variable: scraper_url
-          label: External Scraper URL
-          description: URL of an external scraping service when using External mode.
-          schema:
-            type: string
-            show_if: [["mode", "=", "external"]]
-            default: ""
-            required: false
 
   - variable: run_as
     label: ""
@@ -182,6 +83,7 @@ questions:
           label: WebUI Port
           schema:
             type: dict
+            show_if: [["host_network", "=", false]]
             attrs:
               - variable: bind_mode
                 label: Port Bind Mode
@@ -206,6 +108,7 @@ questions:
                 label: Port Number
                 schema:
                   type: int
+                  show_if: [["bind_mode", "=", "published"]]
                   default: 31012
                   min: 1
                   max: 65535
