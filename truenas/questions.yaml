@@ -522,5 +522,5 @@ questions:
                 description: Memory limit for kestrel.
                 schema:
                   type: int
-                  default: 1024
+                  default: 4096
                   required: true
