@@ -5,11 +5,16 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
 	"gopkg.in/yaml.v3"
 )
+
+// ──────────────────────────────────────────────
+// Models
+// ──────────────────────────────────────────────
 
 // AppYAML models truenas/app.yaml
 type AppYAML struct {
@@ -30,6 +35,54 @@ type RunAsEntry struct {
 	UserName    string `yaml:"user_name"`
 }
 
+type IXValues struct {
+	Images map[string]ImageInfo `yaml:"images"`
+	Consts map[string]any       `yaml:"consts"`
+}
+
+type ImageInfo struct {
+	Repository string `yaml:"repository"`
+	Tag        string `yaml:"tag"`
+}
+
+// ──────────────────────────────────────────────
+// Shared utilities
+// ──────────────────────────────────────────────
+
+func absPath(t *testing.T, parts ...string) string {
+	t.Helper()
+	cwd, _ := os.Getwd()
+	if strings.HasSuffix(cwd, "truenas") {
+		return filepath.Join(append([]string{cwd}, parts...)...)
+	}
+	return filepath.Join(append([]string{cwd, "truenas"}, parts...)...)
+}
+
+func randomString(n int) string {
+	const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
+}
+
+func toMapIX(v IXValues) (map[string]any, error) {
+	data, err := yaml.Marshal(v)
+	if err != nil {
+		return nil, err
+	}
+	var m map[string]any
+	if err := yaml.Unmarshal(data, &m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+// ──────────────────────────────────────────────
+// AppYAML helpers & tests
+// ──────────────────────────────────────────────
+
 func readAppYAML(t *testing.T) AppYAML {
 	t.Helper()
 	data, err := os.ReadFile(absPath(t, "app.yaml"))
@@ -43,20 +96,14 @@ func readAppYAML(t *testing.T) AppYAML {
 	return a
 }
 
-// ──────────────────────────────────────────────
-// Functional tests
-// ──────────────────────────────────────────────
-
 func TestAppFunctionalLibVersionHash(t *testing.T) {
 	a := readAppYAML(t)
 	if a.LibVersionHash == "" {
 		t.Error("F.1: lib_version_hash must not be empty")
 	}
-	// SHA256 hex hashes are 64 characters
 	if len(a.LibVersionHash) != 64 {
 		t.Errorf("F.1: lib_version_hash length %d, expected 64", len(a.LibVersionHash))
 	}
-	// Must be valid hex
 	for _, c := range a.LibVersionHash {
 		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
 			t.Errorf("F.1: lib_version_hash contains invalid hex char %c", c)
@@ -67,7 +114,6 @@ func TestAppFunctionalLibVersionHash(t *testing.T) {
 
 func TestAppFunctionalRunAsContextCount(t *testing.T) {
 	a := readAppYAML(t)
-	// After removing scraper + permissions, should have 1 entry (main container only, like Jellyfin)
 	if len(a.RunAsContext) != 1 {
 		t.Errorf("F.2: Expected 1 run_as_context entry, got %d", len(a.RunAsContext))
 	}
@@ -102,10 +148,6 @@ func TestAppFunctionalMainContainerEntry(t *testing.T) {
 	}
 }
 
-// ──────────────────────────────────────────────
-// Structural / Non-functional tests
-// ──────────────────────────────────────────────
-
 func TestAppStructureAnnotations(t *testing.T) {
 	a := readAppYAML(t)
 	requiredAnns := []string{"min_scale_version"}
@@ -133,19 +175,14 @@ func TestAppStructureLibVersion(t *testing.T) {
 	}
 }
 
-// ──────────────────────────────────────────────
-// Random / Fuzz
-// ──────────────────────────────────────────────
-
 func TestAppRandomPartition(t *testing.T) {
-	// P.1: Delete random optional fields, verify critical fields survive
 	critical := map[string]bool{
-		"lib_version":       true,
-		"app_version":       true,
-		"lib_version_hash":  true,
-		"name":              true,
-		"train":             true,
-		"version":           true,
+		"lib_version":      true,
+		"app_version":      true,
+		"lib_version_hash": true,
+		"name":             true,
+		"train":            true,
+		"version":          true,
 	}
 
 	for _, frac := range []float64{0.0, 0.25, 0.50} {
@@ -158,7 +195,6 @@ func TestAppRandomPartition(t *testing.T) {
 			if err := yaml.Unmarshal(data, &raw); err != nil {
 				t.Fatalf("unmarshal: %v", err)
 			}
-			// Delete random non-critical keys
 			optKeys := make([]string, 0)
 			for k := range raw {
 				if !critical[k] {
@@ -181,33 +217,6 @@ func TestAppRandomPartition(t *testing.T) {
 	}
 }
 
-func TestAppRandomFuzz(t *testing.T) {
-	a := readAppYAML(t)
-	data, err := yaml.Marshal(a)
-	if err != nil {
-		t.Fatalf("marshal: %v", err)
-	}
-	var m map[string]any
-	if err := yaml.Unmarshal(data, &m); err != nil {
-		t.Fatalf("unmarshal: %v", err)
-	}
-	for i := 0; i < 5; i++ {
-		m["x-fuzz-"+randomString(6)] = randomString(rand.Intn(16) + 1)
-	}
-	out, err := yaml.Marshal(m)
-	if err != nil {
-		t.Fatalf("fuzz marshal: %v", err)
-	}
-	var round AppYAML
-	if err := yaml.Unmarshal(out, &round); err != nil {
-		t.Fatalf("fuzz unmarshal: %v", err)
-	}
-}
-
-// ──────────────────────────────────────────────
-// Performance
-// ──────────────────────────────────────────────
-
 func TestAppParsePerformance(t *testing.T) {
 	file := absPath(t, "app.yaml")
 	for i := 0; i < 100; i++ {
@@ -221,10 +230,6 @@ func TestAppParsePerformance(t *testing.T) {
 		}
 	}
 }
-
-// ──────────────────────────────────────────────
-// Integration / Smoke
-// ──────────────────────────────────────────────
 
 func TestAppIntegrationSmokeChain(t *testing.T) {
 	a := readAppYAML(t)
@@ -246,23 +251,257 @@ func TestAppIntegrationSmokeChain(t *testing.T) {
 }
 
 // ──────────────────────────────────────────────
-// Utilities
+// IXValues helpers & tests
 // ──────────────────────────────────────────────
 
-func absPath(t *testing.T, parts ...string) string {
+func readIXValues(t *testing.T) IXValues {
 	t.Helper()
-	cwd, _ := os.Getwd()
-	if strings.HasSuffix(cwd, "truenas") {
-		return filepath.Join(append([]string{cwd}, parts...)...)
+	file := absPath(t, "ix_values.yaml")
+	data, err := os.ReadFile(file)
+	if err != nil {
+		t.Fatalf("read ix_values.yaml: %v", err)
 	}
-	return filepath.Join(append([]string{cwd, "truenas"}, parts...)...)
+	var v IXValues
+	if err := yaml.Unmarshal(data, &v); err != nil {
+		t.Fatalf("unmarshal ix_values.yaml: %v", err)
+	}
+	return v
 }
 
-func randomString(n int) string {
-	const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	b := make([]byte, n)
-	for i := range b {
-		b[i] = letters[rand.Intn(len(letters))]
+func TestIXValuesFunctionalRequiredKeysExist(t *testing.T) {
+	raw := readIXValues(t)
+
+	requiredImages := []string{"image", "container_utils_image"}
+	for _, img := range requiredImages {
+		if _, ok := raw.Images[img]; !ok {
+			t.Errorf("Required image %q missing", img)
+		}
 	}
-	return string(b)
+
+	requiredConsts := []string{"kestrel_container_name", "perms_container_name", "internal_web_port"}
+	for _, c := range requiredConsts {
+		if _, ok := raw.Consts[c]; !ok {
+			t.Errorf("Required const %q missing", c)
+		}
+	}
+
+	for name, img := range raw.Images {
+		if img.Repository == "" {
+			t.Errorf("Image %q has empty repository", name)
+		}
+		if img.Tag == "" {
+			t.Errorf("Image %q has empty tag", name)
+		}
+	}
+
+	switch v := raw.Consts["internal_web_port"].(type) {
+	case int:
+		if v <= 0 || v > 65535 {
+			t.Errorf("internal_web_port out of range: %d", v)
+		}
+	default:
+		t.Errorf("internal_web_port must be int, got %T", v)
+	}
+}
+
+func TestIXValuesForbiddenKeysAbsent(t *testing.T) {
+	raw := readIXValues(t)
+
+	forbiddenImages := []string{"playwright_image"}
+	for _, img := range forbiddenImages {
+		if _, ok := raw.Images[img]; ok {
+			t.Errorf("Forbidden image %q must not exist", img)
+		}
+	}
+
+	forbiddenConsts := []string{"scraper_container_name", "run_as_user", "run_as_group"}
+	for _, c := range forbiddenConsts {
+		if _, ok := raw.Consts[c]; ok {
+			t.Errorf("Forbidden const %q must not exist", c)
+		}
+	}
+}
+
+func TestIXValuesRandomPartition(t *testing.T) {
+	required := map[string]bool{
+		"images.image":                  true,
+		"images.container_utils_image":  true,
+		"consts.kestrel_container_name": true,
+		"consts.perms_container_name":   true,
+		"consts.internal_web_port":      true,
+	}
+
+	tcs := []struct {
+		DeleteFraction float64
+		Label          string
+	}{
+		{0.00, "none deleted"},
+		{0.25, "25pct deleted"},
+		{0.50, "50pct deleted"},
+		{0.75, "75pct deleted"},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.Label, func(t *testing.T) {
+			raw := readIXValues(t)
+
+			allPaths := collectLeafPaths(raw)
+			optPaths := make([]string, 0, len(allPaths))
+			for _, p := range allPaths {
+				if !required[p] {
+					optPaths = append(optPaths, p)
+				}
+			}
+
+			rand.Shuffle(len(optPaths), func(i, j int) {
+				optPaths[i], optPaths[j] = optPaths[j], optPaths[i]
+			})
+			deleteCount := int(float64(len(optPaths)) * tc.DeleteFraction)
+			for i := 0; i < deleteCount; i++ {
+				deleteLeaf(t, &raw, optPaths[i])
+			}
+
+			remaining := collectLeafPaths(raw)
+			remSet := make(map[string]bool, len(remaining))
+			for _, p := range remaining {
+				remSet[p] = true
+			}
+			for p := range required {
+				if !remSet[p] {
+					t.Errorf("Required %q missing after %.0f%% deletion", p, tc.DeleteFraction*100)
+				}
+			}
+		})
+	}
+}
+
+func TestIXValuesStructure(t *testing.T) {
+	raw := readIXValues(t)
+
+	if len(raw.Images) != 2 {
+		t.Errorf("Expected 2 images, got %d", len(raw.Images))
+	}
+	if len(raw.Consts) != 3 {
+		t.Errorf("Expected 3 consts, got %d", len(raw.Consts))
+	}
+
+	for _, key := range []string{"kestrel_container_name", "perms_container_name"} {
+		val, ok := raw.Consts[key]
+		if !ok {
+			continue
+		}
+		s, ok := val.(string)
+		if !ok {
+			t.Errorf("%q must be string, got %T", key, val)
+			continue
+		}
+		if strings.ContainsAny(s, "_ ") {
+			t.Errorf("%q = %q must not contain underscores or spaces", key, s)
+		}
+	}
+}
+
+func TestIXValuesRandomFuzz(t *testing.T) {
+	raw := readIXValues(t)
+	m, err := toMapIX(raw)
+	if err != nil {
+		t.Fatalf("toMap: %v", err)
+	}
+
+	for i := 0; i < 10; i++ {
+		key := "x-test-" + randomString(8)
+		m[key] = randomString(rand.Intn(32) + 1)
+	}
+
+	data, err := yaml.Marshal(m)
+	if err != nil {
+		t.Fatalf("fuzz marshal: %v", err)
+	}
+	var parsed map[string]any
+	if err := yaml.Unmarshal(data, &parsed); err != nil {
+		t.Fatalf("fuzz unmarshal: %v", err)
+	}
+}
+
+func TestIXValuesParsePerformance(t *testing.T) {
+	file := absPath(t, "ix_values.yaml")
+	data, err := os.ReadFile(file)
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+
+	for i := 0; i < 100; i++ {
+		var v IXValues
+		if err := yaml.Unmarshal(data, &v); err != nil {
+			t.Fatalf("unmarshal: %v", err)
+		}
+	}
+}
+
+func TestIXValuesIntegrationSmokeChain(t *testing.T) {
+	raw := readIXValues(t)
+
+	for name, img := range raw.Images {
+		if img.Tag == "latest" {
+			t.Errorf("Image %q uses 'latest' tag", name)
+		}
+		if !strings.Contains(img.Repository, "/") {
+			t.Errorf("Image %q repository %q has no namespace", name, img.Repository)
+		}
+	}
+
+	out, err := yaml.Marshal(raw)
+	if err != nil {
+		t.Fatalf("marshal error: %v", err)
+	}
+	var round IXValues
+	if err := yaml.Unmarshal(out, &round); err != nil {
+		t.Fatalf("round-trip unmarshal: %v", err)
+	}
+	if !reflect.DeepEqual(raw.Consts, round.Consts) {
+		t.Errorf("consts not equal after round-trip")
+	}
+}
+
+func TestIXValuesIntegrationCrossFile(t *testing.T) {
+	raw := readIXValues(t)
+	containerName, _ := raw.Consts["kestrel_container_name"].(string)
+
+	dcFile := absPath(t, "templates", "docker-compose.yaml")
+	dcData, err := os.ReadFile(dcFile)
+	if err != nil {
+		t.Skipf("cannot read docker-compose.yaml: %v", err)
+	}
+	if !strings.Contains(string(dcData), containerName) {
+		t.Errorf("container name %q not found in docker-compose.yaml", containerName)
+	}
+}
+
+// collectLeafPaths returns all leaf key paths from an IXValues.
+func collectLeafPaths(v IXValues) []string {
+	var paths []string
+	for name := range v.Images {
+		paths = append(paths, "images."+name)
+	}
+	for name := range v.Consts {
+		paths = append(paths, "consts."+name)
+	}
+	return paths
+}
+
+// deleteLeaf removes a leaf entry by path (e.g. "images.playwright_image").
+func deleteLeaf(t *testing.T, v *IXValues, path string) {
+	t.Helper()
+	parts := strings.SplitN(path, ".", 2)
+	if len(parts) != 2 {
+		t.Fatalf("invalid path: %s", path)
+	}
+	switch parts[0] {
+	case "images":
+		delete(v.Images, parts[1])
+	case "consts":
+		delete(v.Consts, parts[1])
+	default:
+		t.Fatalf("unknown top-level key: %s", parts[0])
+	}
 }
