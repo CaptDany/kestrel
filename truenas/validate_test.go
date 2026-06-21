@@ -105,7 +105,7 @@ func TestAppFunctionalLibVersionHash(t *testing.T) {
 		t.Errorf("F.1: lib_version_hash length %d, expected 64", len(a.LibVersionHash))
 	}
 	for _, c := range a.LibVersionHash {
-		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
+		if (c < '0' || c > '9') && (c < 'a' || c > 'f') && (c < 'A' || c > 'F') {
 			t.Errorf("F.1: lib_version_hash contains invalid hex char %c", c)
 			break
 		}
@@ -712,19 +712,6 @@ func TestDCIntegrationSmokeChain(t *testing.T) {
 // valuesDot formats a dotted values path like "values.consts.foo".
 func valuesDot(path string) string {
 	return "values." + path
-}
-
-func formatInt(n int) string {
-	return strings.TrimSpace(strings.Replace(
-		strings.Replace(
-			strings.Replace(
-				strings.Replace(
-					fmt.Sprintf("%d", n),
-					" ", "", -1),
-				"\n", "", -1),
-			"\r", "", -1),
-		"\t", "", -1),
-	)
 }
 
 func formatFloat(f float64) string {
