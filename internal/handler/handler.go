@@ -367,6 +367,11 @@ func (h *Handler) ScrapeURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if result.Title == "" && result.Price == nil {
+		jsonErr(w, 422, "could not extract product data from this URL — the page may require JavaScript")
+		return
+	}
+
 	jsonResp(w, 200, result)
 }
 

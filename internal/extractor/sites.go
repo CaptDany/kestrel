@@ -112,6 +112,30 @@ func (m *mercadolibreParser) Extract(rawURL string) (*Result, error) {
 	}
 
 	if res.Price == nil {
+		whole := strings.TrimSpace(doc.Find(".andes-money-amount__fraction").First().Text())
+		if whole != "" {
+			cents := strings.TrimSpace(doc.Find(".andes-money-amount__cents").First().Text())
+			priceStr := strings.ReplaceAll(whole, ".", "")
+			priceStr = strings.ReplaceAll(priceStr, ",", ".")
+			if cents != "" {
+				priceStr += "." + cents
+			}
+			if p, err := strconv.ParseFloat(priceStr, 64); err == nil {
+				res.Price = &p
+			}
+			if res.Currency == "" {
+				sym := strings.TrimSpace(doc.Find(".andes-money-amount__currency-symbol").First().Text())
+				if sym == "$" {
+					sym = ""
+				}
+				if sym != "" {
+					res.Currency = sym
+				}
+			}
+		}
+	}
+
+	if res.Price == nil {
 		extractMeta(doc, res)
 	}
 
