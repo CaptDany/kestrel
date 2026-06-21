@@ -258,12 +258,13 @@
                 --scrollbar-thumb: #2C2D31;
                 --body-color: 226 225 236;
             }
+            html { background-color: rgb(var(--background)); }
+            body { background-color: rgb(var(--background)); color: rgb(var(--body-color)); font-family: 'Futura', 'Inter', sans-serif; }
             {{$bgMode := index .Settings "background_mode"}}
             {{$bgValue := index .Settings "background_value"}}
             {{$bgOverlay := index .Settings "background_overlay"}}
             {{if eq $bgMode "image"}}
             html { background: #0A0B0D; }
-            body { background: transparent; color: rgb(var(--body-color)); font-family: 'Futura', 'Inter', sans-serif; }
             #bg-image { position: fixed; inset: 0; z-index: -2; background: url('{{$bgValue}}') center/cover; pointer-events: none; }
             #bg-image::after { content: ''; position: fixed; inset: 0; background: rgba(0,0,0,{{$bgOverlay}}); pointer-events: none; }
             {{else if eq $bgMode "gradient"}}
@@ -387,7 +388,7 @@
         {{if eq (index .Settings "background_mode") "image"}}
         <div id="bg-image"></div>
         {{end}}
-        <div class="flex min-h-screen">
+            <div class="flex" style="min-height:100dvh">
             <aside
                 class="fixed left-0 top-0 h-screen w-[240px] glass-nav flex-col gap-lg p-md hidden md:flex z-50 border-r border-outline-variant/10"
             >
