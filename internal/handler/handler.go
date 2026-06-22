@@ -4,12 +4,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io"
 	"log"
 	"math"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/CaptDany/kestrel/internal/db"
@@ -308,6 +312,93 @@ func (h *Handler) UpdateItem(w http.ResponseWriter, r *http.Request) {
 	jsonResp(w, 200, updated)
 }
 
+// ─── Image Upload / Delete ────────────────────────────────────────────────────
+
+func (h *Handler) UploadItemImage(w http.ResponseWriter, r *http.Request) {
+	id, err := parseID(r)
+	if err != nil {
+		jsonErr(w, 400, "invalid id")
+		return
+	}
+	item, err := db.GetItem(id)
+	if err != nil {
+		jsonErr(w, 404, "item not found")
+		return
+	}
+
+	r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
+	if err := r.ParseMultipartForm(10 << 20); err != nil {
+		jsonErr(w, 400, "file too large or invalid form")
+		return
+	}
+
+	file, header, err := r.FormFile("image")
+	if err != nil {
+		jsonErr(w, 400, "missing image field")
+		return
+	}
+	defer func() { _ = file.Close() }()
+
+	ext := strings.ToLower(filepath.Ext(header.Filename))
+	if ext == "" {
+		ext = ".jpg"
+	}
+	allowedExts := map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".gif": true, ".webp": true, ".avif": true}
+	if !allowedExts[ext] {
+		jsonErr(w, 400, "unsupported file type (allowed: jpg, png, gif, webp, avif)")
+		return
+	}
+	filename := fmt.Sprintf("item_%d_%d%s", id, time.Now().UnixNano(), ext)
+
+	uploadsDir := "data/uploads"
+	_ = os.MkdirAll(uploadsDir, 0755)
+	dst, err := os.Create(filepath.Join(uploadsDir, filename))
+	if err != nil {
+		jsonErr(w, 500, "failed to save file")
+		return
+	}
+	defer func() { _ = dst.Close() }()
+
+	if _, err := io.Copy(dst, file); err != nil {
+		jsonErr(w, 500, "failed to write file")
+		return
+	}
+
+	item.ImageURL = "/uploads/" + filename
+	if err := db.UpdateItem(item); err != nil {
+		jsonErr(w, 500, "failed to save image url")
+		return
+	}
+
+	jsonResp(w, 200, map[string]string{"image_url": item.ImageURL})
+}
+
+func (h *Handler) DeleteItemImage(w http.ResponseWriter, r *http.Request) {
+	id, err := parseID(r)
+	if err != nil {
+		jsonErr(w, 400, "invalid id")
+		return
+	}
+	item, err := db.GetItem(id)
+	if err != nil {
+		jsonErr(w, 404, "item not found")
+		return
+	}
+
+	if item.ImageURL != "" {
+		localPath := filepath.Join("data/uploads", filepath.Base(item.ImageURL))
+		_ = os.Remove(localPath)
+	}
+
+	item.ImageURL = ""
+	if err := db.UpdateItem(item); err != nil {
+		jsonErr(w, 500, "failed to remove image url")
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *Handler) DeleteItem(w http.ResponseWriter, r *http.Request) {
 	id, err := parseID(r)
 	if err != nil {
@@ -362,12 +453,20 @@ func (h *Handler) ScrapeURL(w http.ResponseWriter, r *http.Request) {
 
 	parser := extractor.GetParser(u)
 	result, err := parser.Extract(req.URL)
+
+	if err != nil || result == nil || (result.Title == "" && result.Price == nil) {
+		if s, _ := db.GetSetting("scraper_url"); s != "" {
+			pw := extractor.NewPlaywrightExtractor(s)
+			result, err = pw.Extract(req.URL)
+		}
+	}
+
 	if err != nil {
 		jsonErr(w, 422, "extraction failed: "+err.Error())
 		return
 	}
 
-	if result.Title == "" && result.Price == nil {
+	if result == nil || (result.Title == "" && result.Price == nil) {
 		jsonErr(w, 422, "could not extract product data from this URL — the page may require JavaScript")
 		return
 	}

@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
@@ -20,6 +22,7 @@ type scrapeResult struct {
 	Title    string   `json:"title"`
 	Price    *float64 `json:"price"`
 	Currency string   `json:"currency"`
+	ImageURL string   `json:"image_url"`
 	URL      string   `json:"url"`
 }
 
@@ -97,26 +100,67 @@ func extractFromHTML(html, rawURL string) *scrapeResult {
 		return res
 	}
 
+	res.ImageURL = doc.Find(`meta[property="og:image"]`).AttrOr("content", "")
+
 	res.Title = strings.TrimSpace(doc.Find("title").Text())
 	if t := strings.TrimSpace(doc.Find(`meta[property="og:title"]`).AttrOr("content", "")); t != "" {
 		res.Title = t
 	}
 
-	priceStr := doc.Find(`meta[property="product:price:amount"]`).AttrOr("content", "")
-	if priceStr == "" {
-		priceStr = doc.Find(`meta[property="og:price:amount"]`).AttrOr("content", "")
-	}
+	u, _ := url.Parse(rawURL)
+	host := strings.ToLower(u.Hostname())
 
-	if priceStr != "" {
-		var p float64
-		if _, err := fmt.Sscanf(priceStr, "%f", &p); err == nil {
-			res.Price = &p
+	if strings.Contains(host, "mercadolibre.") || strings.Contains(host, "mercadolivre.") {
+		if t := strings.TrimSpace(doc.Find("h1.ui-pdp-title").Text()); t != "" {
+			res.Title = t
+		}
+		if whole := strings.TrimSpace(doc.Find(".andes-money-amount__fraction").Text()); whole != "" {
+			whole = strings.ReplaceAll(whole, ",", "")
+			cents := strings.TrimSpace(doc.Find(".andes-money-amount__cents").Text())
+			curr := strings.TrimSpace(doc.Find(".andes-money-amount__currency-symbol").Text())
+			priceVal := whole
+			if cents != "" {
+				priceVal += "." + cents
+			}
+			if p, err := strconv.ParseFloat(priceVal, 64); err == nil {
+				res.Price = &p
+			}
+			if curr != "" {
+				res.Currency = curr
+			}
+		}
+	} else if strings.Contains(host, "amazon.") {
+		if t := strings.TrimSpace(doc.Find("#productTitle").Text()); t != "" {
+			res.Title = t
+		}
+		if whole := strings.TrimSpace(doc.Find(".a-price-whole").Text()); whole != "" {
+			whole = strings.ReplaceAll(whole, ",", "")
+			fraction := strings.TrimSpace(doc.Find(".a-price-fraction").Text())
+			priceVal := whole + "." + fraction
+			if p, err := strconv.ParseFloat(priceVal, 64); err == nil {
+				res.Price = &p
+			}
 		}
 	}
 
-	res.Currency = doc.Find(`meta[property="product:price:currency"]`).AttrOr("content", "")
+	if res.Price == nil {
+		priceStr := doc.Find(`meta[property="product:price:amount"]`).AttrOr("content", "")
+		if priceStr == "" {
+			priceStr = doc.Find(`meta[property="og:price:amount"]`).AttrOr("content", "")
+		}
+		if priceStr != "" {
+			var p float64
+			if _, err := fmt.Sscanf(priceStr, "%f", &p); err == nil {
+				res.Price = &p
+			}
+		}
+	}
+
 	if res.Currency == "" {
-		res.Currency = doc.Find(`meta[property="og:price:currency"]`).AttrOr("content", "")
+		res.Currency = doc.Find(`meta[property="product:price:currency"]`).AttrOr("content", "")
+		if res.Currency == "" {
+			res.Currency = doc.Find(`meta[property="og:price:currency"]`).AttrOr("content", "")
+		}
 	}
 	if res.Currency == "" {
 		res.Currency = "USD"

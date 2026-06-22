@@ -4,12 +4,12 @@
   "description": "Calendarize your e-commerce purchases based on paydays and budget.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#12131a",
-  "theme_color": "#375bd2",
+  "background_color": "#FFFBF8",
+  "theme_color": "#FFFBF8",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/static/logo/pwa-icon.svg",
+      "src": "/static/logo/icon-light-bg.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any"

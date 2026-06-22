@@ -29,6 +29,7 @@
         />
         <meta name="apple-mobile-web-app-title" content="Kestrel" />
         <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="theme-color" content="#FFFBF8" />
         <meta name="theme-color" content="#FFFBF8" media="(prefers-color-scheme: light)" />
         <meta name="theme-color" content="#12131A" media="(prefers-color-scheme: dark)" />
         <meta name="tailwindcss-cdn" content="production" />
@@ -319,6 +320,8 @@
             }
             [x-cloak] { display: none !important; }
             @media (display-mode: standalone) {
+              html { background: rgb(var(--background)) !important; }
+              body { background: rgb(var(--background)) !important; }
               .mobile-topnav { padding-top: calc(16px + max(constant(safe-area-inset-top, 20px), 20px)) !important; padding-top: calc(16px + max(env(safe-area-inset-top, 20px), 20px)) !important; }
               .mobile-bottomnav { bottom: calc(12px + constant(safe-area-inset-bottom, 0px)) !important; bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important; }
             }
@@ -500,7 +503,7 @@
             </nav>
             <main
                 x-data
-                class="flex-1 md:ml-[240px] px-5 md:px-12 min-h-screen pb-32 md:pb-xl w-full max-w-full pt-[72px] md:pt-xl"
+                class="flex-1 md:ml-[240px] px-5 md:px-12 min-h-screen pb-40 md:pb-xl w-full max-w-full pt-[72px] md:pt-xl"
             >
                 <div
                     x-data
