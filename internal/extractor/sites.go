@@ -78,11 +78,31 @@ func (m *mercadolibreParser) Supports(u *url.URL) bool {
 	return strings.Contains(u.Hostname(), "mercadolibre.") || strings.Contains(u.Hostname(), "mercadolivre.")
 }
 
+var mlBotPatterns = []string{"account-verification-main", "suspicious-traffic", "gz/account-verification"}
+
+func isMLBotPage(doc *goquery.Document) bool {
+	html, err := doc.Html()
+	if err != nil {
+		return false
+	}
+	for _, p := range mlBotPatterns {
+		if strings.Contains(html, p) {
+			return true
+		}
+	}
+	return false
+}
+
 func (m *mercadolibreParser) Extract(rawURL string) (*Result, error) {
 	doc, err := fetchDoc(rawURL)
 	if err != nil {
 		return nil, err
 	}
+
+	if isMLBotPage(doc) {
+		return nil, fmt.Errorf("mercadolibre blocked the request with bot detection (anti-bot page)")
+	}
+
 	res := &Result{URL: rawURL}
 
 	res.Title = strings.TrimSpace(doc.Find("h1.ui-pdp-title").Text())
@@ -109,30 +129,6 @@ func (m *mercadolibreParser) Extract(rawURL string) (*Result, error) {
 
 	if res.Currency == "" {
 		res.Currency = strings.TrimSpace(doc.Find(`meta[itemprop="priceCurrency"]`).AttrOr("content", ""))
-	}
-
-	if res.Price == nil {
-		whole := strings.TrimSpace(doc.Find(".andes-money-amount__fraction").First().Text())
-		if whole != "" {
-			cents := strings.TrimSpace(doc.Find(".andes-money-amount__cents").First().Text())
-			priceStr := strings.ReplaceAll(whole, ".", "")
-			priceStr = strings.ReplaceAll(priceStr, ",", ".")
-			if cents != "" {
-				priceStr += "." + cents
-			}
-			if p, err := strconv.ParseFloat(priceStr, 64); err == nil {
-				res.Price = &p
-			}
-			if res.Currency == "" {
-				sym := strings.TrimSpace(doc.Find(".andes-money-amount__currency-symbol").First().Text())
-				if sym == "$" {
-					sym = ""
-				}
-				if sym != "" {
-					res.Currency = sym
-				}
-			}
-		}
 	}
 
 	if res.Price == nil {
