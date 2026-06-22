@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -89,6 +90,12 @@ func New(addr string, tpl *template.Template, staticFS http.FileSystem) *Server 
 	s.Router.Get("/manifest.json", fsrv.ServeHTTP)
 	s.Router.Get("/sw.js", fsrv.ServeHTTP)
 
+	uploadsDir := "data/uploads"
+	os.MkdirAll(uploadsDir, 0755)
+	s.Router.Get("/uploads/*", func(w http.ResponseWriter, r *http.Request) {
+		http.StripPrefix("/uploads", http.FileServer(http.Dir(uploadsDir))).ServeHTTP(w, r)
+	})
+
 	s.Router.Get("/", s.Handler.Dashboard)
 	s.Router.Get("/items", s.Handler.ItemsPage)
 	s.Router.Get("/items/new", s.Handler.ItemNew)
@@ -101,6 +108,8 @@ func New(addr string, tpl *template.Template, staticFS http.FileSystem) *Server 
 	s.Router.Put("/api/items/{id}", s.Handler.UpdateItem)
 	s.Router.Delete("/api/items/{id}", s.Handler.DeleteItem)
 	s.Router.Post("/api/items/{id}/purchase", s.Handler.PurchaseItem)
+	s.Router.Post("/api/items/{id}/image", s.Handler.UploadItemImage)
+	s.Router.Delete("/api/items/{id}/image", s.Handler.DeleteItemImage)
 	s.Router.Post("/api/scrape", s.Handler.ScrapeURL)
 	s.Router.Post("/api/import/wishlist", s.Handler.ImportWishlist)
 	s.Router.Post("/api/items/bulk", s.Handler.BulkCreateItems)
