@@ -337,7 +337,7 @@ func (h *Handler) UploadItemImage(w http.ResponseWriter, r *http.Request) {
 		jsonErr(w, 400, "missing image field")
 		return
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	ext := strings.ToLower(filepath.Ext(header.Filename))
 	if ext == "" {
@@ -351,13 +351,13 @@ func (h *Handler) UploadItemImage(w http.ResponseWriter, r *http.Request) {
 	filename := fmt.Sprintf("item_%d_%d%s", id, time.Now().UnixNano(), ext)
 
 	uploadsDir := "data/uploads"
-	os.MkdirAll(uploadsDir, 0755)
+	_ = os.MkdirAll(uploadsDir, 0755)
 	dst, err := os.Create(filepath.Join(uploadsDir, filename))
 	if err != nil {
 		jsonErr(w, 500, "failed to save file")
 		return
 	}
-	defer dst.Close()
+	defer func() { _ = dst.Close() }()
 
 	if _, err := io.Copy(dst, file); err != nil {
 		jsonErr(w, 500, "failed to write file")
@@ -365,7 +365,10 @@ func (h *Handler) UploadItemImage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	item.ImageURL = "/uploads/" + filename
-	db.UpdateItem(item)
+	if err := db.UpdateItem(item); err != nil {
+		jsonErr(w, 500, "failed to save image url")
+		return
+	}
 
 	jsonResp(w, 200, map[string]string{"image_url": item.ImageURL})
 }
@@ -384,11 +387,14 @@ func (h *Handler) DeleteItemImage(w http.ResponseWriter, r *http.Request) {
 
 	if item.ImageURL != "" {
 		localPath := filepath.Join("data/uploads", filepath.Base(item.ImageURL))
-		os.Remove(localPath)
+		_ = os.Remove(localPath)
 	}
 
 	item.ImageURL = ""
-	db.UpdateItem(item)
+	if err := db.UpdateItem(item); err != nil {
+		jsonErr(w, 500, "failed to remove image url")
+		return
+	}
 
 	w.WriteHeader(http.StatusNoContent)
 }

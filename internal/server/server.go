@@ -91,7 +91,7 @@ func New(addr string, tpl *template.Template, staticFS http.FileSystem) *Server 
 	s.Router.Get("/sw.js", fsrv.ServeHTTP)
 
 	uploadsDir := "data/uploads"
-	os.MkdirAll(uploadsDir, 0755)
+	_ = os.MkdirAll(uploadsDir, 0755)
 	s.Router.Get("/uploads/*", func(w http.ResponseWriter, r *http.Request) {
 		http.StripPrefix("/uploads", http.FileServer(http.Dir(uploadsDir))).ServeHTTP(w, r)
 	})
