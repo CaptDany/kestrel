@@ -28,7 +28,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=0 go build -o scraper -ldflags="-s -w" ./cmd/scraper/
 
-FROM alpine:3.21 AS kestrel
+FROM alpine:3.24 AS kestrel
 RUN apk add --no-cache ca-certificates tzdata
 RUN adduser -D -u 568 kestrel
 USER kestrel
@@ -39,7 +39,7 @@ VOLUME ["/home/kestrel/data"]
 ENV KESTREL_PORT=8000 KESTREL_DB_PATH=/home/kestrel/data/kestrel.db
 CMD ["./kestrel"]
 
-FROM mcr.microsoft.com/playwright:v1.52.0-jammy AS scraper
+FROM mcr.microsoft.com/playwright:v1.61.0-jammy AS scraper
 RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
 RUN adduser --uid 568 --disabled-password --gecos "" kestrel
 USER kestrel
